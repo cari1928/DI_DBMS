@@ -17,8 +17,4 @@ public class Tabla {
     int ncols;
     double nrengs;
     int nindex;
-
-    public void verificaNumeroIndices() {
-        //código
-    }
 }

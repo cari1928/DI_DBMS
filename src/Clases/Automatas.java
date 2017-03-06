@@ -8,9 +8,40 @@ import java.util.List;
  */
 public class Automatas {
 
-    public boolean chCreaBD() {
-        //String query = "CREATE DATABASE prueba";
+    BaseDatos objBD;
+    Errores error;
+    GestionArchivos objG;
+    boolean resultado;
+    String query;
 
+    public Automatas() {
+        objBD = new BaseDatos();
+        error = new Errores(objBD);
+        objG = new GestionArchivos();
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
+    public boolean iniAutomatas() {
+
+        if (!chCreaBD()) {
+            return false;
+        } else if (!chCrearIndice()) {
+            return false;
+        } else if (!chCrearReferencia()) {
+            return false;
+        } else if (!chInsertInto()) {
+            return false;
+        } else if (!chSelect()) {
+            return false;
+        } //agregar los que hagan falta
+
+        return false; //paso por todos los autómatas y aún así llegó hasta este punto
+    }
+
+    public boolean chCreaBD() {
         query = query.toLowerCase();
         int res = query.indexOf("create database ");
         if (res == -1) {
@@ -128,7 +159,7 @@ public class Automatas {
         objI.colid4 = idcols[3];
 
         //checa si el índice ya existe, checa nombre y otros atributos
-        int id = error.chIndiceExiste(objI); //objI ya incluye la tabla en donde esta
+        int id = error.chIndiceExiste("crearIndice", objI); //objI ya incluye la tabla en donde esta
         if (error.dslerr != 0) {
             return false;
         }
@@ -139,7 +170,7 @@ public class Automatas {
 
         //aumenta en 1 el número de indices de la tabla
         List<Tabla> listTablas = objBD.listTablas;
-        Tabla objT;
+        Tabla objT = null;
         for (int i = 0; i < listTablas.size(); i++) {
             objT = listTablas.get(i);
             if (objT.tabid == objI.tabid) {
@@ -157,13 +188,96 @@ public class Automatas {
         return true;
     }
 
-    public static void main(String[] args) {
-        Automatas objA = new Automatas();
-//        boolean flag = objA.chCreaBD();
-//        boolean flag = objA.chCrearIndice();
+    public boolean chCrearReferencia() {
+        error.chBdActiva("chCrearReferencia");
+        if (error.dslerr != 0) {
+            return false;
+        }
 
-        System.out.println(flag);
+        query = query.toLowerCase();
+        //VERIFICAR QUE TENGA CREATE REFERENCE
+        int res = query.indexOf("create reference");
+        if (res == -1) {
+            return false;
+        }
 
+        //separar las tablas de las columnas
+        String parts[] = query.split("create reference");
+        parts = parts[0].split(" ");
+        String parts2[];
+        int idtab[] = new int[2];
+        int idcolumn[] = new int[2];
+        String columns[] = new String[2];
+        //valida existencia de tablas y columnas
+        for (int i = 0; i < 2; i++) {
+            parts2 = parts[i].split(".");
+            if (parts2.length != 2) {
+                return false;
+            }
+            idtab[i] = error.chTablaExiste("chCrearReferencia", parts2[0]);
+            if (idtab[i] != 0) {
+                return false;
+            }
+            columns[i] = parts2[1];
+            idcolumn[i] = error.chColumnasExisten("chCrearReferencia", columns, idtab[i])[0];
+            if (idcolumn[i] != 0) {
+                return false;
+            }
+        }
+        if (!error.chComparaTipoColumnas("chCrearReferencia", idtab, idcolumn)) {
+            return false;
+        }
+        //List<Tabla> listTablas = objBD.listTablas;
+        //List<Columna> listColumnas;
+        //for (int i = 0; i < 2; i++) {
+
+        for (int j = 0; j < objBD.listTablas.size(); j++) {
+            //Tabla objT = listTablas.get(j); //Saca tabla por tabla
+            if (objBD.listTablas.get(j).tabid == idtab[0]) { //Compara id para encontrar la tabla indicada
+                for (int k = 0; k < objBD.listTablas.get(j).listColumnas.size(); k++) {
+                    //Columna objC=objT.listColumnas.get(k);//Saca columna por columna
+                    if (objBD.listTablas.get(j).listColumnas.get(k).colid == idcolumn[0]) {//Compara id para encontrar la columna indicada
+                        objBD.listTablas.get(j).listColumnas.get(k).tabref = idtab[1];
+                        objBD.listTablas.get(j).listColumnas.get(k).colref = idcolumn[1];
+                    }
+                }
+            }
+        }
+        //}
+
+        return true;
+    }
+
+    public boolean chInsertInto() {
+        error.chBdActiva("chInsert");
+        if (error.dslerr != 0) {
+            return false;
+        }
+
+        String tokens[] = query.split(" ");
+        return true;
+    }
+
+    public boolean chSelect() {
+        error.chBdActiva("chSelect");
+        if (error.dslerr != 0) {
+            return false;
+        }
+        query = query.toLowerCase();
+        String columns[];
+        int res = query.indexOf("select");
+        if (res == -1) {
+            return false;
+        }
+        res = query.indexOf("*");
+        if (res == -1) {
+            String parts[] = query.split("select");
+            String auxcolumns[] = query.split("from");
+            columns = auxcolumns[0].split(", ");
+        } else {
+            columns = null;
+        }
+        return true;
     }
 
 }
