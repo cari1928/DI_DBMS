@@ -13,7 +13,7 @@ public class Indice {
 
     int tabid;
     int indid;
-    char[] nomid = new char[10];
+    char[] nomind = new char[10];
     char indtipo;
     int colid1;
     int colid2;

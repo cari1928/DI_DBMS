@@ -11,10 +11,12 @@ public class Errores {
 
     int dslerr;
     BaseDatos objBD;
+    GestionArchivos objG;
 
-    public Errores(BaseDatos objBD) {
+    public Errores(BaseDatos objBD, GestionArchivos objG) {
         dslerr = 0;
         this.objBD = objBD;
+        this.objG = objG;
     }
 
     public void chCrearBD(String accion, String nomBD) {
@@ -34,22 +36,34 @@ public class Errores {
     }
 
     public void chBdActiva(String accion) {
-        if (objBD.nombre != null) {
+        if (objBD.nombre == null) {
             asignarCodigo(accion, "chBdActiva");
         }
     }
 
+    //return id de la tabla
     public int chTablaExiste(String accion, String nomtab) {
-        List<Tabla> listTablas = objBD.listTablas;
-
-        for (int i = 0; i < listTablas.size(); i++) {
-            Tabla objT = listTablas.get(i);
-            if (nomtab.equals(objT.nombtab)) {
-                return objT.tabid;
+        List<String> list = null;
+        String[] parts;
+        File archivo = new File("BD\\" + objBD.nombre + ".dbs\\" + nomtab + ".dat");
+        if (!archivo.exists()) {
+            if (!accion.equals("crearTabla")) {
+                asignarCodigo(accion, "chTablaExiste");
+                return -1;
             }
         }
 
-        asignarCodigo(accion, "chTablaExiste");
+        try {
+            list = objG.leer("tablas");
+            for (int i = 0; i < list.size(); i++) {
+                parts = list.get(i).split(" "); //8 campos
+                if (parts[0].equals(nomtab)) {
+                    return Integer.parseInt(parts[1]);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR LISTA TABLAS CHTABLAEXISTE");
+        }
         return -1;
     }
 

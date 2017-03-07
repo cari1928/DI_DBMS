@@ -21,14 +21,12 @@ public class GestionArchivos {
         this.objBD = objBD;
     }
 
-    //accion = insertar, modificar
-    public void escribir(int llave, String nomFile, String accion, String registro) throws IOException {
+    //inserta al final del archivo
+    public void escribir(int llave, String nomFile, String registro) throws IOException {
         StringBuilder builder = null;
         raf = new RandomAccessFile("BD\\" + objBD.nombre + ".dbs\\" + nomFile, "rw");
 
-        if (accion.equals("actualizar")) {
-            raf.seek(raf.length());
-        }
+        raf.seek(raf.length());
 
         raf.writeInt(llave);
         builder = new StringBuilder(registro);
@@ -77,6 +75,8 @@ public class GestionArchivos {
         while ((ap_actual = raf.getFilePointer()) != (ap_final = raf.length())) {
             char[] registro = new char[TAMAÑO];
             char tmp;
+            tmp = raf.readChar();
+            tmp = raf.readChar();
             for (int i = 0; i < registro.length; i++) {
                 tmp = raf.readChar();
                 registro[i] = tmp;
