@@ -13,8 +13,9 @@ public class Indice {
 
     int tabid;
     int indid;
-    char[] nomind = new char[10];
+    String nomind;
     char indtipo;
+    int[] colsid;
     int colid1;
     int colid2;
     int colid3;

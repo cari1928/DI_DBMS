@@ -67,11 +67,7 @@ public class Automatas {
     }
 
     public boolean chUsarBD() {
-        List<String> listTablas, listColumnas, listIndices;
-        String[] parts, partsCols, partsInd;
-        Tabla objT;
-        Columna objC;
-        Indice objI;
+        String[] parts;
 
         query = query.toLowerCase();
         int res = query.indexOf("use database ");
@@ -138,7 +134,7 @@ public class Automatas {
             registro += parts.length + " ";
             registro += 0 + " ";
             registro += 0 + " ";
-            objG.escribir(n + 1, "tablas", registro);
+            objG.escribir(n + 1, "tablas", registro, "final");
 
             //columnas
             registro = "";
@@ -166,8 +162,8 @@ public class Automatas {
                     registro += parts2[0] + " ";
                 }
                 registro += "-1 ";
-                registro += "-1";
-                objG.escribir(objG.contarRengs("columnas") + 1, "columnas", registro);
+                registro += "-1 ";
+                objG.escribir(objG.contarRengs("columnas") + 1, "columnas", registro, "final");
             }
 
             objG.crearArchivo("BD\\" + objBD.nombre + ".dbs\\" + nombtab + ".dat");
@@ -193,16 +189,18 @@ public class Automatas {
 
     public boolean chCrearIndice() {
         char indtipo = '0';
-        String registro, nomind;
-        int tabid, indid, idcols;
+        String registro;
+        int indid, idcols;
+        int[] colsid;
+        List<String> list;
+        Indice objI = new Indice();
+        boolean flag = true;
 
         //checa si la base de datos está activa
         error.chBdActiva("crearIndice");
         if (error.dslerr != 0) {
             return false;
         }
-
-        boolean flag = true;
 
         //posibles casos
         //String query = "CREATE UNIQUE ASC INDEX iNomb ON tNomb(col1, col2, col3)";
@@ -265,16 +263,17 @@ public class Automatas {
             return false;
         }
         parts = parts[1].split(" on ");
-        nomind = parts[0];
-        registro = nomind + " ";
+        //nomind = parts[0];
+        objI.nomind = parts[0];
+        registro = objI.nomind + " ";
 
         //obtener nombre de la tabla y verifica si existe en la BD
         parts = parts[1].split(" \\( ");
-        tabid = error.chTablaExiste("crearIndice", parts[0]);
+        objI.tabid = error.chTablaExiste("crearIndice", parts[0]);
         if (error.dslerr != 0) {
             return false;
         }
-        registro += tabid + " ";
+        registro += objI.tabid + " ";
 
         //obtener columnas y verificar si existen en la tabla
         parts = parts[1].split(" \\)");
@@ -283,33 +282,65 @@ public class Automatas {
             return false;
         }
 
-//        for (String nomcol : nomcols) {
-//            idcols = error.chColumnasExisten("crearIndice", nomcol, tabid);
-//            if (error.dslerr != 0) {
-//                return false;
-//            }
-//            registro += idcols + " ";
-//        }
+        colsid = new int[4];
         for (int i = 0; i < 4; i++) {
             if (i < nomcols.length) {
-                idcols = error.chColumnasExisten("crearIndice", nomcols[i], tabid);
+                idcols = error.chColumnasExisten("crearIndice", nomcols[i], objI.tabid);
                 if (error.dslerr != 0) {
                     return false;
                 }
+                colsid[i] = idcols;
                 registro += idcols + " ";
             } else {
+                colsid[i] = -1;
                 registro += -1 + " ";
             }
         }
+        objI.colsid = colsid;
 
         //obtener el indice id
-        indid = getMayorIndiceId(tabid);
-        registro += ++indid + " ";
+        indid = getMayorIndiceId(objI.tabid) + 1;
+        registro += indid + " ";
+        objI.indid = indid;
         registro += indtipo + " ";
+        objI.indtipo = indtipo;
+
+        //checar si ya existe un indice con ese nombre
+        flag = error.chIndiceExiste("chCrearIndice", objI);
+        if (error.dslerr != 0) {
+            return false;
+        }
 
         try {
+            //escribir en indices
             indid = objG.contarRengs("indices");
-            objG.escribir(++indid, "indices", registro);
+            objG.escribir(++indid, "indices", registro, "final");
+
+            //actualizar tablas
+            list = objG.leer("tablas");
+            for (int i = 0; i < list.size(); i++) {
+                parts = list.get(i).split(" ");
+                if (Integer.parseInt(parts[1]) == objI.tabid) {
+                    parts[6] = (Integer.parseInt(parts[6]) + 1) + "";
+                    registro = "";
+                    for (String part : parts) {
+                        registro += part + " ";
+                    }
+                    list.set(i, registro);
+                    i = list.size(); //para que no recorra lo demás
+                }
+            }
+
+            for (int i = 0; i < list.size(); i++) {
+                if (i == 0) {
+                    objG.escribir(i, "tablas", list.get(i), "nuevo");
+                } else {
+                    objG.escribir(i, "tablas", list.get(i), "final");
+                }
+            }
+
+            objG.crearArchivo("BD\\" + objBD.nombre + ".dbs\\" + objI.nomind + ".ix" + objI.indid);
+
         } catch (Exception e) {
             System.out.println("ERROR: ESCRIBIRINIDCE");
         }
@@ -476,6 +507,29 @@ public class Automatas {
         //checar valores de indices
         objG.escribir(objT.nombtab, objT); //crea de nuevo el archivo de esa tabla
 
+    }
+
+    public void mostrarArchivos() {
+        try {
+            List<String> lista = objG.leer("tablas");
+            System.out.println("TABLAS");
+            for (int i = 0; i < lista.size(); i++) {
+                System.out.println(lista.get(i));
+            }
+
+            System.out.println("COLUMNAS");
+            lista = objG.leer("columnas");
+            for (int i = 0; i < lista.size(); i++) {
+                System.out.println(lista.get(i));
+            }
+
+            System.out.println("INDICES");
+            lista = objG.leer("indices");
+            for (int i = 0; i < lista.size(); i++) {
+                System.out.println(lista.get(i));
+            }
+        } catch (Exception e) {
+        }
     }
 
 }

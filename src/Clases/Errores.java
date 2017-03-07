@@ -89,38 +89,34 @@ public class Errores {
         return -1;
     }
 
-    public int chIndiceExiste(String accion, Indice p_objI) {
-        List<Tabla> listTablas = objBD.listTablas;
-        int indid = -1;
+    public boolean chIndiceExiste(String accion, Indice objI) {
+        List<String> list;
+        String[] parts;
+        try {
+            list = objG.leer("indices");
 
-        for (int i = 0; i < listTablas.size(); i++) {
-            Tabla objT = listTablas.get(i); //agarra una tabla de la bd
-
-            if (objT.tabid == p_objI.tabid) { //verifica si es la tabla a checar
-                List<Indice> listIndices = objBD.listIndices;
-
-                for (int j = 0; j < listIndices.size(); j++) {
-                    Indice objI = listIndices.get(j);
-
-                    if (objI.nomind.equals(p_objI.nomind)) {
+            for (int i = 0; i < list.size(); i++) {
+                parts = list.get(i).split(" ");
+                if (Integer.parseInt(parts[1]) == objI.tabid) {
+                    if (parts[0].equals(objI.nomind)) {
                         asignarCodigo(accion, "chNombreIndice");
-                        return -1;
+                        return false;
                     }
-
-                    if (objI.indtipo.equals(p_objI.indtipo)
-                            && objI.colid1 == p_objI.colid1
-                            && objI.colid2 == p_objI.colid2
-                            && objI.colid3 == p_objI.colid3
-                            && objI.colid4 == p_objI.colid4) {
+                    if (Integer.parseInt(parts[2]) == objI.colsid[0]
+                            && Integer.parseInt(parts[3]) == objI.colsid[1]
+                            && Integer.parseInt(parts[4]) == objI.colsid[2]
+                            && Integer.parseInt(parts[5]) == objI.colsid[3]
+                            && parts[7].equals(objI.indtipo)) {
                         asignarCodigo(accion, "chIndiceExiste");
-                        return -1;
+                        return false;
                     }
-                    indid = objI.indid; //guardará el último id del indice asignado
                 }
-                i = listTablas.size(); //para que no recorra las demás tablas
             }
+        } catch (Exception e) {
+            System.out.println("ERROR: CHINDICEEXISTE");
+            return false;
         }
-        return indid;
+        return true;
     }
 
     public boolean chComparaTipoColumnas(String accion, int idtab[], int idcolumn[]) {

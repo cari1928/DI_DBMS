@@ -21,12 +21,14 @@ public class GestionArchivos {
         this.objBD = objBD;
     }
 
-    //inserta al final del archivo
-    public void escribir(int llave, String nomFile, String registro) throws IOException {
+    //tipo = nuevo, agregar al final (final)
+    public void escribir(int llave, String nomFile, String registro, String tipo) throws IOException {
         StringBuilder builder = null;
         raf = new RandomAccessFile("BD\\" + objBD.nombre + ".dbs\\" + nomFile, "rw");
 
-        raf.seek(raf.length());
+        if (tipo.equals("final")) {
+            raf.seek(raf.length());
+        }
 
         raf.writeInt(llave);
         builder = new StringBuilder(registro);
@@ -41,7 +43,6 @@ public class GestionArchivos {
         List<String> list = new ArrayList<>();
         String convert;
 
-        Tabla[] objsT = new Tabla[tamaño];
         raf = new RandomAccessFile("BD\\" + objBD.nombre + ".dbs\\" + nomFile, "r");
 
         while ((ap_actual = raf.getFilePointer()) != (ap_final = raf.length())) {
@@ -105,6 +106,53 @@ public class GestionArchivos {
             archivo.createNewFile();
         } catch (Exception e) {
             System.out.println("No se ha podido crear la jerarquía de archivos");
+        }
+    }
+
+    //pos dentro del arreglo, id para buscar el registro
+    public void actualizarArchivo(String nomFile, String nuevoRegistro, int id, int pos) {
+        StringBuilder builder = null;
+        long ap_actual, ap_final;
+        int tamaño, llave; //cantidad de objetos
+        String convert;
+        String[] parts;
+        RandomAccessFile tmpRaf;
+        List<String> list;
+
+        try {
+            list = new ArrayList<>();
+            tmpRaf = new RandomAccessFile("tmp", "rw");
+            tamaño = contarRengs(nomFile);
+            raf = new RandomAccessFile("BD\\" + objBD.nombre + ".dbs\\" + nomFile, "rw");
+
+            while ((ap_actual = raf.getFilePointer()) != (ap_final = raf.length())) {
+
+                llave = raf.readInt();
+                char[] registro = new char[TAMAÑO];
+                char tmp;
+                for (int i = 0; i < registro.length; i++) {
+                    tmp = raf.readChar();
+                    registro[i] = tmp;
+                }
+
+                new String(registro).replace('\0', ' ');
+
+                convert = "";
+                for (int i = 0; i < registro.length; i++) {
+                    convert += registro[i];
+                }
+                parts = convert.split(" ");
+
+                if (Integer.parseInt(parts[pos] + "") == id) {
+                    list.add(nuevoRegistro);
+                } else {
+                    list.add(convert);
+                }
+            }
+            raf.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
