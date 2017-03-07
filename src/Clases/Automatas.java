@@ -86,74 +86,14 @@ public class Automatas {
             return false;
         }
 
-        objBD.nombre = nombbd;
-        try {
-            listTablas = objG.leer("tablas");
-            listColumnas = objG.leer("columnas");
-            listIndices = objG.leer("indices");
-
-            for (int i = 0; i < listTablas.size(); i++) {
-                parts = listTablas.get(i).split(" ");
-                objT = new Tabla();
-                objT.nombtab = parts[0];
-                objT.tabid = Integer.parseInt(parts[1]);
-                objT.archivo = parts[2];
-                objT.tamreng = Integer.parseInt(parts[3]);
-                objT.ncols = Integer.parseInt(parts[4]);
-                objT.nrengs = Integer.parseInt(parts[5]);
-                objT.nindex = Integer.parseInt(parts[6]);
-
-                for (int j = 0; j < listColumnas.size(); j++) {
-                    partsCols = listColumnas.get(j).split(" ");
-
-                    if (Integer.parseInt(partsCols[2]) == objT.tabid) {
-                        objC = new Columna();
-                        objC.coltipo = partsCols[0].charAt(0);
-                        objC.coltam = Integer.parseInt(partsCols[1]);
-                        objC.tabid = Integer.parseInt(partsCols[2]);
-                        objC.colid = Integer.parseInt(partsCols[3]);
-                        objC.nomcol = getChars(partsCols[4], 10);
-                        objC.tabref = Integer.parseInt(partsCols[5]);
-                        objC.colref = Integer.parseInt(partsCols[6]);
-
-                        for (int k = 0; k < listIndices.size(); k++) {
-                            partsInd = listIndices.get(k).split(" ");
-                            objI = new Indice();
-
-                            if (Integer.parseInt(partsInd[1]) == objT.tabid
-                                    && (Integer.parseInt(partsInd[2]) == objC.colid
-                                    || Integer.parseInt(partsInd[3]) == objC.colid
-                                    || Integer.parseInt(partsInd[4]) == objC.colid
-                                    || Integer.parseInt(partsInd[5]) == objC.colid)) {
-                                objI.nomind = getChars(partsInd[0], 10);
-                                objI.tabid = Integer.parseInt(partsInd[1]);
-                                objI.colid1 = Integer.parseInt(partsInd[2]);
-                                objI.colid2 = Integer.parseInt(partsInd[3]);
-                                objI.colid3 = Integer.parseInt(partsInd[4]);
-                                objI.colid4 = Integer.parseInt(partsInd[5]);
-                                objI.indid = Integer.parseInt(partsInd[6]);
-                                objI.indtipo = partsInd[7].charAt(0);
-
-                                objT.listIndices.add(objI);
-                            }
-                        }
-
-                        objT.listColumnas.add(objC);
-                    }
-                }
-                objBD.listTablas.add(objT);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        objBD.nombre = nombbd; //no es necesario crear la estructura de datos
         System.out.println("USANDO " + objBD.nombre);
         return true;
     }
 
     public boolean chCrearTabla() {
         String[] parts, parts2, parts3;
-        String registro = "", nombtab;
+        String registro, nombtab;
         int n;
 
         error.chBdActiva("crearTabla");
@@ -204,23 +144,29 @@ public class Automatas {
             registro = "";
             for (int i = 0; i < parts.length; i++) {
                 parts2 = parts[i].split(":"); //pegados
-                registro += parts2[1] + " ";
+                registro += parts2[1] + " "; //coltipo
 
-                if ("c".equals(parts2[1].charAt(0))) {
+                //obtener tamaño
+                if (parts2[1].contains("char")) {
                     parts3 = parts2[1].split("\\[");
-                    parts3 = parts2[0].split("]");
-                    registro += parts3[0] + " ";
+//                    parts3 = parts2[0].split("]"); //no sería mas bien con parts3???
+                    parts3 = parts3[1].split("]");
+                    registro += parts3[0] + " "; //coltam
+                } else {
+                    registro += 0 + " ";
                 }
-                registro += n + 501 + " ";
-                registro += objG.contarRengs("columnas") + 1 + " ";
+                registro += n + 501 + " "; //tabid
+                registro += (objG.contarRengs("columnas") + 1) + " "; //colid
                 if (parts2[0].length() > 10) {
                     char partecitas[] = getChars(parts2[0], 10);
                     for (int j = 0; j < partecitas.length; j++) {
                         registro += partecitas[i]; //nombre cortado en 8
                     }
+                } else {
+                    registro += parts2[0] + " ";
                 }
-                registro += " -1 ";
-                registro += " -1";
+                registro += "-1 ";
+                registro += "-1";
                 objG.escribir(objG.contarRengs("columnas") + 1, "columnas", registro);
             }
 
@@ -236,16 +182,19 @@ public class Automatas {
     public char[] getChars(String cadena, int tamaño) {
         char[] tmp = new char[tamaño];
         for (int i = 0; i < tmp.length; i++) {
-            tmp[i] = cadena.charAt(i);
+            if (i >= cadena.length()) {
+                tmp[i] = ' ';
+            } else {
+                tmp[i] = cadena.charAt(i);
+            }
         }
         return tmp;
     }
 
     public boolean chCrearIndice() {
-        String registro = "", nomind;
-        char indtipo;
-        int tabid, totalInd;
-        List<Tabla> listTablas = null;
+        char indtipo = '0';
+        String registro, nomind;
+        int tabid, indid, idcols;
 
         //checa si la base de datos está activa
         error.chBdActiva("crearIndice");
@@ -328,30 +277,66 @@ public class Automatas {
         registro += tabid + " ";
 
         //obtener columnas y verificar si existen en la tabla
-        parts = parts[1].split(" \\) ");
+        parts = parts[1].split(" \\)");
         String[] nomcols = parts[0].split(", ");
         if (nomcols.length > 4) { //deben ser 4 columnas por índice
             return false;
         }
-        int[] idcols = error.chColumnasExisten("crearIndice", nomcols, tabid);
-        if (error.dslerr != 0) {
-            return false;
+
+//        for (String nomcol : nomcols) {
+//            idcols = error.chColumnasExisten("crearIndice", nomcol, tabid);
+//            if (error.dslerr != 0) {
+//                return false;
+//            }
+//            registro += idcols + " ";
+//        }
+        for (int i = 0; i < 4; i++) {
+            if (i < nomcols.length) {
+                idcols = error.chColumnasExisten("crearIndice", nomcols[i], tabid);
+                if (error.dslerr != 0) {
+                    return false;
+                }
+                registro += idcols + " ";
+            } else {
+                registro += -1 + " ";
+            }
         }
-        registro += idcols[0];
-        registro += idcols[1];
-        registro += idcols[2];
-        registro += idcols[3];
+
+        //obtener el indice id
+        indid = getMayorIndiceId(tabid);
+        registro += ++indid + " ";
+        registro += indtipo + " ";
 
         try {
-            listTablas = objG.leer("tablas");
-            if (error.dslerr != 0) {
-                return false;
-            }
-
+            indid = objG.contarRengs("indices");
+            objG.escribir(++indid, "indices", registro);
         } catch (Exception e) {
+            System.out.println("ERROR: ESCRIBIRINIDCE");
         }
 
         return true;
+    }
+
+    public int getMayorIndiceId(int tabid) {
+        String[] parts;
+        List<String> list;
+        int mayor = 0;
+        try {
+            list = objG.leer("indices");
+            for (int i = 0; i < list.size(); i++) {
+
+                parts = list.get(i).split(" ");
+                if (Integer.parseInt(parts[1]) == tabid) {
+
+                    if (mayor < Integer.parseInt(parts[6])) {
+                        mayor = Integer.parseInt(parts[6]);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR: GETMAYORID");
+        }
+        return mayor;
     }
 
     public boolean chCrearReferencia() {

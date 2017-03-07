@@ -67,36 +67,26 @@ public class Errores {
         return -1;
     }
 
-    public int[] chColumnasExisten(String accion, String[] nomcols, int idtab) {
-        boolean flag = false;
-        List<Tabla> listTablas = objBD.listTablas;
-        int[] idcols = new int[nomcols.length];
-        int cont = 0;
-
-        for (int i = 0; i < listTablas.size(); i++) {
-            Tabla objT = listTablas.get(i); //agarra una tabla de la bd
-
-            if (objT.tabid == idtab) { //verifica si es la tabla a checar
-                List<Columna> listColumnas = objT.listColumnas; //obtiene las columnas de esa tabla
-
-                for (Columna listColumna : listColumnas) { //para recorrer cada columna de la BD    
-                    Columna objC = listColumna;
-
-                    for (String nomcol : nomcols) { //para recorrer cada columna del arreglo
-                        if (objC.nomcol.equals(nomcol)) {
-                            idcols[cont] = objC.colid;
-                            flag = true;
-                        }
+    public int chColumnasExisten(String accion, String nomcols, int idtab) {
+        List<String> list;
+        String[] parts;
+        try {
+            list = objG.leer("columnas");
+            for (int i = 0; i < list.size(); i++) {
+                parts = list.get(i).split(" "); //7 campos
+                if (Integer.parseInt(parts[2]) == idtab) {
+                    if (parts[4].equals(nomcols)) {
+                        return Integer.parseInt(parts[3]);
                     }
                 }
             }
+
+        } catch (Exception e) {
+            System.out.println("ERROR: CHCOLUMNASEXISTEN");
         }
 
-        if (!flag) {
-            asignarCodigo(accion, "chColumnasExisten");
-        }
-
-        return idcols;
+        asignarCodigo(accion, "chColumnasExisten");
+        return -1;
     }
 
     public int chIndiceExiste(String accion, Indice p_objI) {
@@ -302,7 +292,7 @@ public class Errores {
                 break;
         }
 
-        System.out.println("ERROR: " + dslerr);
+        System.out.println("ERROR: " + dslerr + " " + accion + " " + metodo);
     }
 
     public Tabla obtenerTabla(int tabid) {
