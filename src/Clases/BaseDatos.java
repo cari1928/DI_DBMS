@@ -1,5 +1,6 @@
 package Clases;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -8,7 +9,10 @@ import java.util.List;
  */
 public class BaseDatos {
 
-    boolean status = false;
     String nombre;
     List<Tabla> listTablas;
+    
+    public BaseDatos() {
+        listTablas = new ArrayList<>();
+    }
 }

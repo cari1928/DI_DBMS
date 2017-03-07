@@ -13,14 +13,16 @@ public class Principal {
     static String query;
 
     public static void main(String[] args) {
+
         consola = new Scanner(System.in);
         objA = new Automatas();
 
         mostrarBienvenida();
         while (true) {
+            System.out.print(">");
             query = pedirDatos();
             objA.setQuery(query);
-            objA.iniAutomatas(); 
+            objA.iniAutomatas();
         }
     }
 
@@ -33,6 +35,6 @@ public class Principal {
     }
 
     static String pedirDatos() {
-        return consola.next();
+        return consola.nextLine();
     }
 }
