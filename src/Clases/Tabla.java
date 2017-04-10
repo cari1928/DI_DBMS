@@ -1,5 +1,6 @@
 package Clases;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -10,6 +11,7 @@ public class Tabla {
 
     List<Columna> listColumnas;
     List<Indice> listIndices;
+    List<String> columnas;
     String nombtab;
     String archivo;
     int tabid;
@@ -17,4 +19,8 @@ public class Tabla {
     int ncols;
     double nrengs;
     int nindex;
+
+    public Tabla() {
+        columnas = new ArrayList<>();
+    }
 }

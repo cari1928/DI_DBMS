@@ -1,7 +1,10 @@
 package Clases;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -145,24 +148,64 @@ public class Errores {
         return flag;
     }
 
-    public void chComparaTipoColumnas(String accion, String[] columnas, int tabid) {
+    public boolean chComparaTipoColumnas(String accion, int tabid, int colid, String colvalue) {
+        List<String> list;
         String[] parts;
-        Tabla objT = obtenerTabla(tabid);
-        List<Columna> listColumnas = objT.listColumnas;
 
-        for (int j = 0; j < listColumnas.size(); j++) {
-            Columna objC = listColumnas.get(j);
+        try {
+            list = objG.leer("columnas");
+            for (String list1 : list) {
+                parts = list1.split(" ");
 
-            for (String columna : columnas) {
-                if (objC.nomcol.equals(columna)) { //compara los nombres de las columnas
-                    parts = columna.split("="); //part0 = nombrecol, part1 = valcol
-                    char tipoDato = chTipoDato(parts[1]);
+                //checa que sea la tabla 
+                if (Integer.parseInt(parts[2]) == tabid) {
 
-                    if (objC.coltipo != tipoDato) {
-                        asignarCodigo(accion, "chComparaTipoColumnas");
+                    //checa que sea la columna
+                    if (Integer.parseInt(parts[3]) == colid) {
+
+                        if (parts[0].contains("char")) {
+                            //checa que tenga comillas
+                            if (colvalue.charAt(0) != '\'' && colvalue.charAt(colvalue.length()) != '\'') {
+                                asignarCodigo(accion, "chComparaTipoColumnas");
+                                return false;
+                            }
+
+                        } else if (parts[0].contains("int")) {
+                            try {
+                                Integer.parseInt(colvalue);
+                            } catch (Exception e) {
+                                asignarCodigo(accion, "chComparaTipoColumnas");
+                                return false;
+                            }
+
+                        } else if (parts[0].equals("float")) {
+                            //quizá no es necesario checar si tiene comillas
+                            if (!colvalue.contains("f")) { //checa si tiene una f
+                                asignarCodigo(accion, "chComparaTipoColumnas");
+                                return false;
+                            }
+                            try {
+                                Float.parseFloat(colvalue); //comprueba que sea flotante
+                            } catch (Exception e) {
+                                asignarCodigo(accion, "chComparaTipoColumnas");
+                                return false;
+                            }
+
+                        } else if (parts[0].equals("double")) {
+                            try {
+                                Double.parseDouble(parts[0]); //comprueba que sea double
+                            } catch (Exception e) {
+                                asignarCodigo(accion, "chComparaTipoColumnas");
+                                return false;
+                            }
+                        }
                     }
                 }
             }
+            return true;
+        } catch (Exception e) {
+            System.out.println("ERROR: CHCOMPARATIPOCOLUMNAS");
+            return false;
         }
     }
 
@@ -174,7 +217,7 @@ public class Errores {
         List<Indice> listIndices = objT.listIndices;
 
         for (int i = 0; i < listIndices.size(); i++) {
-            Indice objI = listIndices.
+            //Indice objI = listIndices.
         }
     }
 
@@ -276,6 +319,9 @@ public class Errores {
                     case "chComparaTipoColumnas":
                         dslerr = 703;
                         break;
+                    case "???":
+                        dslerr = 704; //???
+                        break;
                 }
                 break;
 
@@ -303,20 +349,4 @@ public class Errores {
         }
         return null;
     }
-
-    public int[] obtenerColumnasID(int tabid, String[] columnas) {
-        Tabla objT = obtenerTabla(tabid);
-        List<Columna> listColumnas = objT.listColumnas;
-        int[] ids = new int[columnas.length];
-
-        for (int i = 0; i < listColumnas.size(); i++) {
-            Columna objC = listColumnas.get(i);
-
-            for (String columna : columnas) {
-                if (objC.nomcol.equals(columna)) {
-                }
-            }
-        }
-    }
-
 }

@@ -37,7 +37,7 @@ public class Automatas {
             return true;
         } else if (chCrearReferencia()) {
             return true;
-        } else if (chInsertInto()) {
+        } else if (chUpdate()) {
             return true;
         } else if (chSelect()) {
             return true;
@@ -306,7 +306,7 @@ public class Automatas {
         objI.indtipo = indtipo;
 
         //checar si ya existe un indice con ese nombre
-        flag = error.chIndiceExiste("chCrearIndice", objI);
+        error.chIndiceExiste("chCrearIndice", objI);
         if (error.dslerr != 0) {
             return false;
         }
@@ -339,8 +339,8 @@ public class Automatas {
                 }
             }
 
+            //crear nuevo archivo
             objG.crearArchivo("BD\\" + objBD.nombre + ".dbs\\" + objI.nomind + ".ix" + objI.indid);
-
         } catch (Exception e) {
             System.out.println("ERROR: ESCRIBIRINIDCE");
         }
@@ -401,7 +401,7 @@ public class Automatas {
                 return false;
             }
             columns[i] = parts2[1];
-            idcolumn[i] = error.chColumnasExisten("chCrearReferencia", columns, idtab[i])[0];
+//            idcolumn[i] = error.chColumnasExisten("chCrearReferencia", columns, idtab[i])[0];
             if (idcolumn[i] != 0) {
                 return false;
             }
@@ -483,30 +483,35 @@ public class Automatas {
             return false;
         }
         parts = parts[1].split(" set ");
-        objT.nombtab = parts[0];
+        objT.nombtab = parts[0]; //nomtab
         res = error.chTablaExiste("update", objT.nombtab);
         if (error.dslerr != 0) {
             return false;
         }
-        objT.tabid = res;
+        objT.tabid = res; //tabid
 
         //obtiene columnas
         parts = parts[1].split(" where ");
         columnas = parts[0].split(",");
-        error.chColumnasExisten("update", columnas, objT.tabid);
-        if (error.dslerr != 0) {
-            return false;
-        }
-
-        error.chComparaTipoColumnas("update", columnas, objT.tabid);
-        if (error.dslerr != 0) {
-            return false;
+        for (String columna : columnas) {
+            parts = columna.split("=");
+            res = error.chColumnasExisten("update", parts[0], objT.tabid);
+            if (error.dslerr != 0) {
+                return false;
+            }
+            objT.columnas.add(res + "");
+            //verifica que cada valor corresponda al tipo de dato de cada columna
+            error.chComparaTipoColumnas("update", objT.tabid, res, parts[1]);
+            if (error.dslerr != 0) {
+                return false;
+            }
         }
 
         //checar integridad
         //checar valores de indices
-        objG.escribir(objT.nombtab, objT); //crea de nuevo el archivo de esa tabla
-
+        //actualizar archivo tablas
+        //actualizar archivo indices
+        return true;
     }
 
     public void mostrarArchivos() {

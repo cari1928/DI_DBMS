@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="1">
+        <file>
+            <url>src/Clases/GestionArchivo.java</url>
+            <bookmark id="1">
+                <name/>
+                <line>110</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group/>
+        <group>
+            <file>file:/C:/Users/radog/Documents/NetBeansProjects/DI_DBMS/src/Clases/GestionArchivos.java</file>
+            <file>file:/C:/Users/radog/Documents/NetBeansProjects/DI_DBMS/src/Clases/Indice.java</file>
+            <file>file:/C:/Users/radog/Documents/NetBeansProjects/DI_DBMS/src/Clases/BaseDatos.java</file>
+            <file>file:/C:/Users/radog/Documents/NetBeansProjects/DI_DBMS/src/Clases/Automatas.java</file>
+        </group>
     </open-files>
 </project-private>
