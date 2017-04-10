@@ -23,7 +23,7 @@ public class Principal {
             query = pedirDatos();
             objA.setQuery(query);
             objA.iniAutomatas();
-            objA.mostrarArchivos();
+            //objA.mostrarArchivos();
         }
     }
 
@@ -31,7 +31,7 @@ public class Principal {
         System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
                 + "+                       HOLA BIENVENIDO                       +\n"
                 + "+                              A                              +\n"
-                + "+                          TENIS RSQL                         +\n"
+                + "+                          TENISFSQL                         +\n"
                 + "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
     }
 

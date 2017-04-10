@@ -9,22 +9,35 @@ import java.util.List;
  */
 public class Automatas {
 
+    //TENER EN CUENTA
+    //LOS MÉTODOS PRINCIPALES SON AQUELLOS CUYOS NOMBRES ESTÁN EN ESPAÑOL
     BaseDatos objBD;
     Errores error;
     GestionArchivos objG;
     boolean resultado;
-    String query;
+    private String query;
 
+    /**
+     *
+     */
     public Automatas() {
         objBD = new BaseDatos();
         objG = new GestionArchivos(objBD);
         error = new Errores(objBD, objG);
     }
 
+    /**
+     *
+     * @param query
+     */
     public void setQuery(String query) {
         this.query = query;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean iniAutomatas() {
 
         if (chCreaBD()) {
@@ -41,11 +54,17 @@ public class Automatas {
             return true;
         } else if (chSelect()) {
             return true;
+        } else if (chShowFiles()) {
+
         } //agregar los que hagan falta
 
         return false; //paso por todos los autómatas y aún así llegó hasta este punto
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean chCreaBD() {
         query = query.toLowerCase();
         int res = query.indexOf("create database ");
@@ -62,10 +81,14 @@ public class Automatas {
             return false;
         }
 
-        objG.crearDirectorio("BD\\" + nombd + ".dbs"); //no se que parametros vaya a llevar
+        objG.crearDirectorio("BD\\" + nombd + ".dbs");
         return true;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean chUsarBD() {
         String[] parts;
 
@@ -87,95 +110,218 @@ public class Automatas {
         return true;
     }
 
-    public boolean chCrearTabla() {
-        String[] parts, parts2, parts3;
-        String registro, nombtab;
+    /**
+     * Ejemplo: create table nomTabla ( col1:tipo, col2:tipo, ... ). Cuidado con
+     * los espacios
+     *
+     * @return Si la creación fue exitosa o si hubo algún error
+     */
+    private boolean chCrearTabla() {
+        String[] parts;
+        String registro, nombtab, type;
         int n;
 
-        error.chBdActiva("crearTabla");
-        if (error.dslerr != 0) {
+        parts = checkCreateTable(); //verifica que se cumpla la sentencia create table
+        if (parts == null) { //no cumplió
             return false;
         }
 
-        query = query.toLowerCase();
-        int res = query.indexOf("create table ");
-        if (res == -1) {
+        //si cumplió, parts ya está con un split en base a la sentencia 'create table'
+        parts = parts[1].split(" \\( ");
+        registro = checkNameTable(parts[0]); //checa varios aspectos relacionados con el nombre de la tabla
+        if (registro == null) { //si es null entonces la tabla ya existe
             return false;
-        }
-
-        parts = query.split("create table ");
-        String par = "\\(";
-        parts = parts[1].split(" " + par + " ");
-        registro = parts[0]; //guarda nombtab
-
-        if (registro.length() > 8) {
-            char partecitas[] = getChars(registro, 8);
-            registro = "";
-            for (int i = 0; i < partecitas.length; i++) {
-                registro += partecitas[i]; //nombre cortado en 8
-            }
         }
         nombtab = registro;
         registro += " ";
 
-        error.chTablaExiste("crearTabla", registro);
-        if (error.dslerr != 0) {
-            return false;
-        }
-
         try {
             n = objG.contarRengs("tablas");
-            registro += n + 501 + " ";
-            registro += nombtab + ".dat ";
-            registro += 150 + " ";
-
             parts = parts[1].split(" \\)");
-            parts = parts[0].split(", ");
-            registro += parts.length + " ";
-            registro += 0 + " ";
-            registro += 0 + " ";
-            objG.escribir(n + 1, "tablas", registro, "final");
-
-            //columnas
+            type = checkFuzziness(parts);
+            if (type == null) {
+                System.out.println("ERROR con tipo determinista o difuso");
+                return false;
+            }
+            //prepara el registro a guardar en el archivo tablas
+            parts = writeTableFile(registro, nombtab, parts, n, type);
             registro = "";
-            for (int i = 0; i < parts.length; i++) {
-                parts2 = parts[i].split(":"); //pegados
-                registro += parts2[1] + " "; //coltipo
 
-                //obtener tamaño
-                if (parts2[1].contains("char")) {
-                    parts3 = parts2[1].split("\\[");
-//                    parts3 = parts2[0].split("]"); //no sería mas bien con parts3???
-                    parts3 = parts3[1].split("]");
-                    registro += parts3[0] + " "; //coltam
-                } else {
-                    registro += 0 + " ";
-                }
-                registro += n + 501 + " "; //tabid
-                registro += (objG.contarRengs("columnas") + 1) + " "; //colid
-                if (parts2[0].length() > 10) {
-                    char partecitas[] = getChars(parts2[0], 10);
-                    for (int j = 0; j < partecitas.length; j++) {
-                        registro += partecitas[i]; //nombre cortado en 8
-                    }
-                } else {
-                    registro += parts2[0] + " ";
-                }
-                registro += "-1 ";
-                registro += "-1 ";
-                objG.escribir(objG.contarRengs("columnas") + 1, "columnas", registro, "final");
+            //intenta escribir las columnas, si algún tipo de dato es erróneo = null
+            if (writeTableCols(registro, parts, n) == null) {
+                System.out.println("ERROR en tipos de dato");
+                return false;
             }
 
+            //crea un archivo con el nombre de la tabla
             objG.crearArchivo("BD\\" + objBD.nombre + ".dbs\\" + nombtab + ".dat");
+            System.out.println("TABLA " + nombtab + " CREADA CORRECTAMENTE");
             return true;
+
         } catch (IOException ex) {
+            //TODO
             ex.printStackTrace();
             return false;
         }
-
     }
 
-    public char[] getChars(String cadena, int tamaño) {
+    /**
+     * Checa si la BD está activa Checa si está presente la sentencia 'create
+     * table '
+     *
+     * @return si está presente se obtiene un arreglo String que contiene los
+     * campos a crear de la tabla si no está presente, regresa un null
+     */
+    private String[] checkCreateTable() {
+        error.chBdActiva("crearTabla");
+        if (error.dslerr != 0) {
+            return null;
+        }
+
+        query = query.toLowerCase();
+        if (!query.contains("create table ")) {
+            return null;
+        }
+
+        return query.split("create table ");
+    }
+
+    /**
+     * Checa si el nombre de la tabla. Si el nombre tiene más de 8 caracteres,
+     * éste se corta Checa si la tabla ya existe
+     *
+     * @return si la tabla ya existe, regresa un null Si no existe, regresa el
+     * nombre de la tabla ya cortado o no
+     */
+    private String checkNameTable(String registro) {
+        if (registro.length() > 8) { //checa que el nombre de la tabla tenga 8 caracteres
+            char partecitas[] = getChars(registro, 8); //nombre cortado en 8 caracteres dentro de un arreglo char
+            registro = "";
+            for (int i = 0; i < partecitas.length; i++) { //se pasa el nombre ya cortado al registro
+                registro += partecitas[i];
+            }
+        }
+
+        error.chTablaExiste("crearTabla", registro);
+        if (error.dslerr != 0) {
+            return null;
+        }
+
+        return registro;
+    }
+
+    /**
+     * Prepara y escribe un registro dentro del archivo Tablas. Llamado desde el
+     * método chCrearTabla
+     *
+     * @return Número de renglones del archivo tablas
+     *
+     */
+    private String[] writeTableFile(String registro, String nombtab, String[] parts, int n, String type) throws IOException {
+        registro += n + 501 + " ";
+        registro += nombtab + ".dat ";
+        registro += 150 + " ";
+
+        parts = parts[0].split(", ");
+        registro += parts.length + " ";
+        registro += 0 + " ";
+        registro += 0 + " ";
+        registro += type + " ";
+        objG.escribir(n + 1, "tablas", registro, "final");
+
+        return parts;
+    }
+
+    /**
+     * Separa las columnas por , y :. Verifica que sea char, int, float o
+     * double. Checa que contenga una D o F. Prepara el registro para ser
+     * escrito.
+     */
+    private String writeTableCols(String registro, String[] parts, int n) throws IOException {
+        String[] parts2, parts3;
+        String type;
+        if (!checkDataTypes(parts)) { //verifica que se hayan escrito tipos de dato válidos
+            return null;
+        }
+
+        for (String part : parts) {
+            registro = "";
+            parts2 = part.split(" ");
+            type = parts2[1];
+            parts2 = parts2[0].split(":"); //pegados
+            registro += parts2[1] + " "; //coltipo
+            //obtener tamaño
+            if (parts2[1].contains("char")) {
+                parts3 = parts2[1].split("\\[");
+                parts3 = parts3[1].split("]");
+                registro += parts3[0] + " "; //coltam
+            } else {
+                registro += 0 + " ";
+            }
+            registro += n + 501 + " "; //tabid
+            registro += (objG.contarRengs("columnas") + 1) + " "; //colid
+            if (parts2[0].length() > 10) {
+                char partecitas[] = getChars(parts2[0], 10);
+                for (int j = 0; j < partecitas.length; j++) {
+                    registro += partecitas[j]; //nombre cortado en 8
+                }
+            } else {
+                registro += parts2[0] + " ";
+            }
+            registro += "-1 ";
+            registro += "-1 ";
+            registro += type;
+            objG.escribir(objG.contarRengs("columnas") + 1, "columnas", registro, "final");
+        }
+        return registro;
+    }
+
+    /**
+     * Verifica que los tipos de datos especificados estén dentro de los
+     * disponibles: integer, char, double y float
+     *
+     * @return falso si no está bien especificado el tipo de dato
+     */
+    private boolean checkDataTypes(String[] parts) {
+        String[] parts2, parts3;
+        for (String part : parts) {
+            parts2 = part.split(":"); //pegados
+
+            if (!parts2[1].contains("integer") && !parts2[1].contains("char")
+                    && !parts2[1].contains("float") && !parts2[1].contains("double")) {
+                return false;
+            }
+
+            parts3 = parts2[1].split(" ");
+            if (!parts3[1].contains("d") && !parts3[1].contains("f")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String checkFuzziness(String[] parts) {
+        String[] parts2;
+        for (String part : parts) {
+            parts2 = part.split(", ");
+            if (parts2.length == 2) {
+                parts2 = parts2[1].split(":");
+            } else {
+                parts2 = parts2[0].split(":");
+            }
+
+            parts2 = parts2[1].split(" ");
+
+            if (parts2[1].equals("d") || parts2[1].equals("f")) {
+                return parts2[1];
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private char[] getChars(String cadena, int tamaño) {
         char[] tmp = new char[tamaño];
         for (int i = 0; i < tmp.length; i++) {
             if (i >= cadena.length()) {
@@ -187,6 +333,10 @@ public class Automatas {
         return tmp;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean chCrearIndice() {
         char indtipo = '0';
         String registro;
@@ -348,6 +498,11 @@ public class Automatas {
         return true;
     }
 
+    /**
+     *
+     * @param tabid
+     * @return
+     */
     public int getMayorIndiceId(int tabid) {
         String[] parts;
         List<String> list;
@@ -370,6 +525,10 @@ public class Automatas {
         return mayor;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean chCrearReferencia() {
         error.chBdActiva("chCrearReferencia");
         if (error.dslerr != 0) {
@@ -430,6 +589,10 @@ public class Automatas {
         return true;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean chInsertInto() {
         error.chBdActiva("chInsert");
         if (error.dslerr != 0) {
@@ -440,6 +603,10 @@ public class Automatas {
         return true;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean chSelect() {
         error.chBdActiva("chSelect");
         if (error.dslerr != 0) {
@@ -462,6 +629,10 @@ public class Automatas {
         return true;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean chUpdate() {
         int res;
         Tabla objT = new Tabla();
@@ -514,7 +685,20 @@ public class Automatas {
         return true;
     }
 
-    public void mostrarArchivos() {
+    private boolean chShowFiles() {
+        error.chBdActiva("crearTabla");
+        if (error.dslerr != 0) {
+            return false;
+        }
+
+        if (query.contains("show files")) {
+            mostrarArchivos();
+            return true;
+        }
+        return false;
+    }
+
+    private void mostrarArchivos() {
         try {
             List<String> lista = objG.leer("tablas");
             System.out.println("TABLAS");
@@ -534,7 +718,7 @@ public class Automatas {
                 System.out.println(lista.get(i));
             }
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
-
 }
