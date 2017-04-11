@@ -13,7 +13,7 @@ public class Principal {
     static String query;
 
     public static void main(String[] args) {
-       
+
         consola = new Scanner(System.in);
         objA = new Automatas();
         mostrarBienvenida();
@@ -23,7 +23,11 @@ public class Principal {
             query = pedirDatos();
             objA.setQuery(query);
             objA.iniAutomatas();
-            //objA.mostrarArchivos();
+
+            //verifica si hay que pedir variables de entrada
+            if (objA.isVarEntrada()) {
+
+            }
         }
     }
 

@@ -11,11 +11,11 @@ public class Automatas {
 
     //TENER EN CUENTA
     //LOS MÉTODOS PRINCIPALES SON AQUELLOS CUYOS NOMBRES ESTÁN EN ESPAÑOL
-    BaseDatos objBD;
-    Errores error;
-    GestionArchivos objG;
-    boolean resultado;
+    private final BaseDatos objBD;
+    private final Errores error;
+    private final GestionArchivos objG;
     private String query;
+    private boolean varEntrada;
 
     /**
      *
@@ -24,6 +24,7 @@ public class Automatas {
         objBD = new BaseDatos();
         objG = new GestionArchivos(objBD);
         error = new Errores(objBD, objG);
+        varEntrada = false;
     }
 
     /**
@@ -45,6 +46,7 @@ public class Automatas {
         } else if (chUsarBD()) {
             return true;
         } else if (chCrearTabla()) {
+            varEntrada = true;
             return true;
         } else if (chCrearIndice()) {
             return true;
@@ -55,7 +57,7 @@ public class Automatas {
         } else if (chSelect()) {
             return true;
         } else if (chShowFiles()) {
-
+            return true;
         } //agregar los que hagan falta
 
         return false; //paso por todos los autómatas y aún así llegó hasta este punto
@@ -121,14 +123,16 @@ public class Automatas {
         String registro, nombtab, type;
         int n;
 
-        parts = checkCreateTable(); //verifica que se cumpla la sentencia create table
+        //verifica que se cumpla la sentencia create table
+        parts = checkCreateTable();
         if (parts == null) { //no cumplió
             return false;
         }
-
-        //si cumplió, parts ya está con un split en base a la sentencia 'create table'
+        //parts está con un split en base a la sentencia 'create table'
         parts = parts[1].split(" \\( ");
-        registro = checkNameTable(parts[0]); //checa varios aspectos relacionados con el nombre de la tabla
+
+        //checa varios aspectos relacionados con el nombre de la tabla
+        registro = checkNameTable(parts[0]);
         if (registro == null) { //si es null entonces la tabla ya existe
             return false;
         }
@@ -138,8 +142,11 @@ public class Automatas {
         try {
             n = objG.contarRengs("tablas");
             parts = parts[1].split(" \\)");
+
+            //verifica si la tabla será difusa o determinista
             type = checkFuzziness(parts);
             if (type == null) {
+                //TODO
                 System.out.println("ERROR con tipo determinista o difuso");
                 return false;
             }
@@ -721,4 +728,13 @@ public class Automatas {
             e.printStackTrace();
         }
     }
+
+    public boolean isVarEntrada() {
+        return varEntrada;
+    }
+
+    public void setVarEntrada(boolean varEntrada) {
+        this.varEntrada = varEntrada;
+    }
+
 }
