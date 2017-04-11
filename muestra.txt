@@ -1,0 +1,61 @@
+run:
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++                       HOLA BIENVENIDO                       +
++                              A                              +
++                          TENISFSQL                         +
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>create database empresa
+Jerarquía de archivos creada con éxito
+>use database empresa
+USANDO empresa
+>create table Fuzzy ( idF:integer D, nombre:char[25] F, estatura:float F, precio:double D, genero:char[1] D, edad:integer F )
+TABLA fuzzy CREADA CORRECTAMENTE
+UNIVERSO DE DISCURSO PARA LA VARIABLE nombre
+INGRESE EL origen: 0
+INGRESE EL fin: 100
+DATOS CORRESPONDIENTES A LA VARIABLE nombre
+INGRESE LAS unidades: personas
+INGRESE EL punto crítico 1: 15
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: 23
+Ingrese la Etiqueta: short
+PRESIONE 0 PARA TERMINAR: 1
+INGRESE EL punto crítico 1: 42
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: 65
+Ingrese la Etiqueta: medium
+PRESIONE 0 PARA TERMINAR: 1
+INGRESE EL punto crítico 1: 80
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: 89
+Ingrese la Etiqueta: large
+PRESIONE 0 PARA TERMINAR: 0
+UNIVERSO DE DISCURSO PARA LA VARIABLE estatura
+INGRESE EL origen: 0
+INGRESE EL fin: 100
+DATOS CORRESPONDIENTES A LA VARIABLE estatura
+INGRESE LAS unidades: metros
+INGRESE EL punto crítico 1: 18
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: -1
+Ingrese la Etiqueta: small
+PRESIONE 0 PARA TERMINAR: 1
+INGRESE EL punto crítico 1: 45
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: 53
+Ingrese la Etiqueta: taller
+PRESIONE 0 PARA TERMINAR: 1
+INGRESE EL punto crítico 1: 74
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: -1
+Ingrese la Etiqueta: bigger
+PRESIONE 0 PARA TERMINAR: 0
+UNIVERSO DE DISCURSO PARA LA VARIABLE edad
+INGRESE EL origen: 0
+INGRESE EL fin: 100
+DATOS CORRESPONDIENTES A LA VARIABLE edad
+INGRESE LAS unidades: dias
+INGRESE EL punto crítico 1: 33
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: -1
+Ingrese la Etiqueta: joven
+PRESIONE 0 PARA TERMINAR: 1
+INGRESE EL punto crítico 1: 75
+INGRESE EL punto crítico 2 O -1 PARA TERMINAR: -1
+Ingrese la Etiqueta: viejo
+PRESIONE 0 PARA TERMINAR: 0
+>show sed files
+ARCHIVO fuzzy.nombre
