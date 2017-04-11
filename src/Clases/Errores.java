@@ -38,6 +38,48 @@ public class Errores {
         }
     }
 
+    public boolean chTablaDifusa(int idtabla){
+        try {
+            String tabla = objG.obtenerRegistroByID("BD\\" + objBD.nombre + ".dbs\\" + "tablas", idtabla);
+            String parts[] = tabla.split(" ");
+            if(!parts[(parts.length-1)].equals("F")){
+                return false;
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return true;
+    }
+    
+    public boolean chColumnaDifusa(int idtabla){
+        try {
+            String columna = objG.obtenerRegistroByID("BD\\" + objBD.nombre + ".dbs\\" + "columnas", idtabla);
+            String parts[] = columna.split(" ");
+            if(!parts[(parts.length-1)].equals("F")){
+                return false;
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return true;
+    }
+    
+    public boolean chVariableLinguistica(String archivo,String etiqueta){
+        String parts[];
+        try {
+            List<String> etiquetas = objG.leer("BD\\" + objBD.nombre + ".dbs\\" + "columnas");
+            for (int i = 0; i < etiquetas.size(); i++) {
+                parts = etiquetas.get(i).split(" ");
+                if(parts[0].equals(etiqueta)){
+                    return true;
+                }
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+    
     public void chBdActiva(String accion) {
         if (objBD.nombre == null) {
             asignarCodigo(accion, "chBdActiva");

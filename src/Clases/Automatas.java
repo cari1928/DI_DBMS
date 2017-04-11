@@ -11,11 +11,11 @@ public class Automatas {
 
     //TENER EN CUENTA
     //LOS MÉTODOS PRINCIPALES SON AQUELLOS CUYOS NOMBRES ESTÁN EN ESPAÑOL
-    private final BaseDatos objBD;
-    private final Errores error;
-    private final GestionArchivos objG;
+    BaseDatos objBD;
+    Errores error;
+    GestionArchivos objG;
+    boolean resultado;
     private String query;
-    private boolean varEntrada;
 
     /**
      *
@@ -24,7 +24,6 @@ public class Automatas {
         objBD = new BaseDatos();
         objG = new GestionArchivos(objBD);
         error = new Errores(objBD, objG);
-        varEntrada = false;
     }
 
     /**
@@ -46,7 +45,6 @@ public class Automatas {
         } else if (chUsarBD()) {
             return true;
         } else if (chCrearTabla()) {
-            varEntrada = true;
             return true;
         } else if (chCrearIndice()) {
             return true;
@@ -57,7 +55,7 @@ public class Automatas {
         } else if (chSelect()) {
             return true;
         } else if (chShowFiles()) {
-            return true;
+
         } //agregar los que hagan falta
 
         return false; //paso por todos los autómatas y aún así llegó hasta este punto
@@ -123,16 +121,14 @@ public class Automatas {
         String registro, nombtab, type;
         int n;
 
-        //verifica que se cumpla la sentencia create table
-        parts = checkCreateTable();
+        parts = checkCreateTable(); //verifica que se cumpla la sentencia create table
         if (parts == null) { //no cumplió
             return false;
         }
-        //parts está con un split en base a la sentencia 'create table'
-        parts = parts[1].split(" \\( ");
 
-        //checa varios aspectos relacionados con el nombre de la tabla
-        registro = checkNameTable(parts[0]);
+        //si cumplió, parts ya está con un split en base a la sentencia 'create table'
+        parts = parts[1].split(" \\( ");
+        registro = checkNameTable(parts[0]); //checa varios aspectos relacionados con el nombre de la tabla
         if (registro == null) { //si es null entonces la tabla ya existe
             return false;
         }
@@ -142,11 +138,8 @@ public class Automatas {
         try {
             n = objG.contarRengs("tablas");
             parts = parts[1].split(" \\)");
-
-            //verifica si la tabla será difusa o determinista
             type = checkFuzziness(parts);
             if (type == null) {
-                //TODO
                 System.out.println("ERROR con tipo determinista o difuso");
                 return false;
             }
@@ -600,13 +593,169 @@ public class Automatas {
      *
      * @return
      */
-    public boolean chInsertInto() {
+
+    //FALTA VERIFICAR LA REFERENCIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    public boolean chInsert(){
         error.chBdActiva("chInsert");
-        if (error.dslerr != 0) {
+        if(error.dslerr != 0){
             return false;
         }
-
-        String tokens[] = query.split(" ");
+        String parts[]=null, columnas[]=null, columnasaux, tabla[]=null, valores[]=null,nomtab;
+        int tabid;
+        String ordenColumnas[][];
+        query = query.toLowerCase(); //Lo convierto todo en minusculas
+        if(query.indexOf("insert into ") == -1){ 
+            System.out.println("no valido");
+            return false;
+        }
+        tabla = query.split("insert into "); 
+        tabla = tabla[1].split(" values ");
+        //tabla = tabla[0].split(" ");
+        if(tabla[0].split(" ").length > 1 ){ // si se especifican las columnas en el query
+          columnas=  tabla;
+          tabla = tabla[0].split(" "); //la tabla o nombtab se quedo en la posicion 0
+          columnas = columnas[0].split(" \\( ");
+          columnas = columnas[1].split(" \\)");
+          columnas = columnas[0].split(" "); //obtengo las columnas ya separadas
+        }
+        nomtab = tabla[0]; //obtengo el nombre de la tabla
+        tabid = error.chTablaExiste("chInsert", nomtab);  //verifico si la tabla existe y guardo el id de la tabla
+        if(error.dslerr != 0){
+            return false;
+        }
+        
+        //Obtener la candidad de columnas que tiene la tabla
+        List tablas;
+        String aux;
+        int n=0;
+        try {
+            tablas = objG.leer("tablas");
+            for (int i = 0; i < tablas.size(); i++) {
+            aux = tablas.get(i).toString();
+            parts = aux.split(" ");
+            if(Integer.parseInt(parts[1]) == tabid){
+                n = Integer.parseInt(parts[4]);
+                i=tablas.size();
+            }
+        }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        ordenColumnas=new String [n][3]; //Se construlle un arreglo donde tendra todas las columnas de la tabla con su id, su nombre y su valor a insertar
+        if(columnas == null){ //preguntar si el usuario especifico las columnas en el insert si no se hace un arreglo con las columnas...
+            try {
+                columnas=new String [n];
+                List Lcolumnas;
+                int cont=0;
+                Lcolumnas = objG.leer("columnas");
+                for (int i = 0; i < Lcolumnas.size(); i++) {
+                    columnasaux = Lcolumnas.get(i).toString(); //se obtiene una columna de todas las columnas de l BD
+                    parts=columnasaux.split(" "); //Se divide por sus campos
+                    if(Integer.parseInt(parts[2]) == tabid){ //Se compara con los id de las tablas para ver las columnas de la tabla a insertar
+                        columnas[cont]=parts[3];    //se obtiene el id de las columnas de la tabla
+                        ordenColumnas[cont][0] = parts[3];//obtiene el id de las columnas
+                        ordenColumnas[cont][1] = parts[4];//obtiene el nombre de las columnas
+                        cont++;
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        else{
+            for (int i = 0; i < columnas.length; i++) {
+                error.chColumnasExisten("chInsert", columnas[i], tabid);
+                if(error.dslerr != 0){
+                    return false;
+                }
+            }
+            try {
+            List Lcolumnas; //aqui estaran todas las columnas de la BD
+            int cont=0;
+            Lcolumnas = objG.leer("columnas"); //Se obtiene las columnas de la BD
+            for (int i = 0; i < Lcolumnas.size(); i++) {
+                columnasaux = Lcolumnas.get(i).toString(); //Se obtiene columna por columna
+                parts=columnasaux.split(" "); //Se dividi en sus campos que tiene
+                if(Integer.parseInt(parts[2]) == tabid){ //Se compara con el id de la tabla para ver si esa columna pertenese a la tabla a insertar
+                    ordenColumnas[cont][0]=parts[3]; //se coloca la columna en el arreglo donde estaran todas las columnas de la tabla a insertar
+                    ordenColumnas[cont][1]=parts[4]; //Se coloca el nombre de la columna
+                    cont++;
+                }
+            }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        valores = query.split("values \\( ");
+        valores = valores[1].split(" \\)");
+        valores = valores[0].split(", ");
+        boolean FFT = false; //bandera tabla difusa (Flag Fuzzy Table)
+         for (int i = 0; i < ordenColumnas.length; i++) {
+             ordenColumnas[i][2]="null";        //Se coloca la palabra null en todas las columnas para posteriormente escribir null en los campos que no se especificaron
+         }
+        
+        for (int i = 0; i < columnas.length; i++) {
+            for (int j = 0; j < ordenColumnas.length; j++) {
+                if(columnas[i].equals(ordenColumnas[j][0]))
+                {
+                    ordenColumnas[j][2]=valores[i];
+                }
+            }
+        }
+        
+         for (int i = 0; i < ordenColumnas.length; i++) {
+             if(!ordenColumnas[i][2].equals("null"))
+                if(ordenColumnas[i][2].indexOf("'") == -1){ // no tiene comillas simples
+                   if(ordenColumnas[i][2].indexOf("<") != -1){ // contiene <...>
+                       if(!FFT){ //No se a verificado que la tabla sea difusa
+                           if( FFT=error.chTablaDifusa(tabid)){ //Se checa que la tabla sea difuca
+                                if(error.chColumnaDifusa(Integer.parseInt(ordenColumnas[i][0]))){ //Verifica que la columna sea difusa...
+                                    if(!error.chVariableLinguistica(nomtab + "." + ordenColumnas[i][1], ordenColumnas[i][2].split("<")[0].split(">")[0])){ //Verifica que la variable linguistica exista
+                                        System.out.println("No se puede insertar una etiqueta lingüistica no existente en la variable difusa de la columna");
+                                        return false;
+                                    }
+                                }
+                                else{
+                                    System.out.println("No se puede insertar una etiqueta lingüistica en una columna determinista");
+                                    return false;
+                                }
+                           }
+                           else
+                           {
+                               System.out.println("No se puede insertar etiquetas lingüisticas en una tabla determinista");
+                               return false;
+                           }
+                       }
+                       else{
+                           //ya se avia veridicado anteriormente la tabla que sea difusa
+                       }
+                   }
+               }
+         }
+        
+        for (int i = 0; i < ordenColumnas.length; i++) {
+            if(!ordenColumnas[i][2].equals("null")){
+                error.chComparaTipoColumnas("chInsert", tabid, Integer.parseInt(ordenColumnas[i][0]), valores[i]);
+            }
+            if(error.dslerr != 0){
+                return false;
+            }
+        }
+        
+        //Hacer la cadena
+        String registro="";
+        for (int i = 0; i < ordenColumnas.length; i++) {
+            if(i != (ordenColumnas.length-1))
+                registro += ordenColumnas[i][2]+" ";
+            else
+                registro += ordenColumnas[i][2];
+        }
+        try {
+            objG.escribir(objG.contarRengs(nomtab + ".dat"), nomtab + ".dat", registro,"final");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
         return true;
     }
 
@@ -728,13 +877,4 @@ public class Automatas {
             e.printStackTrace();
         }
     }
-
-    public boolean isVarEntrada() {
-        return varEntrada;
-    }
-
-    public void setVarEntrada(boolean varEntrada) {
-        this.varEntrada = varEntrada;
-    }
-
 }
