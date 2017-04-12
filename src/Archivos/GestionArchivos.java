@@ -1,5 +1,6 @@
-package SED;
+package Archivos;
 
+import SED.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,8 +14,8 @@ import java.util.List;
  */
 public class GestionArchivos {
 
-    RandomAccessFile raf;
-    final int TAMAÑO = 150;
+    private RandomAccessFile raf;
+    private final int TAMAÑO = 150;
 
     /*
      * tipo = nuevo | final. 
@@ -22,7 +23,7 @@ public class GestionArchivos {
      * final = agrega después del últmo registro
      */
     public void escribir(String nomFile, int llave, String registro, String tipo) throws IOException {
-        StringBuilder builder = null;
+        StringBuilder builder;
         File archivo = new File(nomFile);
 
         if (tipo.equals("nuevo")) {
@@ -112,12 +113,10 @@ public class GestionArchivos {
 
     public void actualizar(String nomFile, int llave, String registro) throws IOException {
         StringBuilder builder = null;
-        File archivo = new File(nomFile);
         raf = new RandomAccessFile(nomFile, "rw");
         if (llave > 0) {
             raf.seek((llave * 300) + (llave * 4));
         }
-        //if(llave>0)
         raf.writeInt(llave);
         builder = new StringBuilder(registro);
         builder.setLength(TAMAÑO);
@@ -188,6 +187,78 @@ public class GestionArchivos {
 
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    public void crearDirectorio(String ruta) {
+        File index = new File(ruta);
+        if (!index.exists()) {
+            index.mkdir();
+            System.out.println("CARPETA " + ruta + " CREADA CORRECTAMENTE");
+        }
+
+        if (ruta.contains(".dbs")) {
+            crearArchivo(ruta + "\\tablas");
+            crearArchivo(ruta + "\\columnas");
+            crearArchivo(ruta + "\\indices");
+            System.out.println("JERARQUÍA DE ARCHIVOS CREADA CON ÉXITO");
+        }
+    }
+
+    public void crearArchivo(String rutaArchivo) {
+        try {
+            File archivo = new File(rutaArchivo);
+            archivo.createNewFile();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("No se ha podido crear la jerarquía de archivos");
+        }
+    }
+
+    //pos dentro del arreglo, id para buscar el registro
+    public void actualizarArchivo(String nomFile, String nuevoRegistro, int id, int pos) {
+        StringBuilder builder = null;
+        long ap_actual, ap_final;
+        int tamaño, llave; //cantidad de objetos
+        String convert;
+        String[] parts;
+        RandomAccessFile tmpRaf;
+        List<String> list;
+
+        try {
+            list = new ArrayList<>();
+            tmpRaf = new RandomAccessFile("tmp", "rw");
+            tamaño = contarRengs(nomFile);
+            raf = new RandomAccessFile(nomFile, "rw");
+
+            while ((ap_actual = raf.getFilePointer()) != (ap_final = raf.length())) {
+
+                llave = raf.readInt();
+                char[] registro = new char[TAMAÑO];
+                char tmp;
+                for (int i = 0; i < registro.length; i++) {
+                    tmp = raf.readChar();
+                    registro[i] = tmp;
+                }
+
+                new String(registro).replace('\0', ' ');
+
+                convert = "";
+                for (int i = 0; i < registro.length; i++) {
+                    convert += registro[i];
+                }
+                parts = convert.split(" ");
+
+                if (Integer.parseInt(parts[pos] + "") == id) {
+                    list.add(nuevoRegistro);
+                } else {
+                    list.add(convert);
+                }
+            }
+            raf.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

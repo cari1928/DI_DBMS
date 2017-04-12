@@ -1,10 +1,8 @@
-package Clases;
+package SGBD;
 
 import SED.VariableEntrada;
 import java.io.IOException;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -46,7 +44,7 @@ public class Principal {
         System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
                 + "+                       HOLA BIENVENIDO                       +\n"
                 + "+                              A                              +\n"
-                + "+                          TENISFSQL                         +\n"
+                + "+                          TENISFSQL                          +\n"
                 + "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
     }
     

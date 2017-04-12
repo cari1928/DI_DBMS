@@ -1,7 +1,8 @@
-package Clases;
+package SGBD;
 
 import java.io.IOException;
 import java.util.List;
+import Archivos.GestionArchivos;
 
 /**
  *
@@ -14,6 +15,7 @@ public class Automatas {
     private final BaseDatos objBD;
     private final Errores error;
     private final GestionArchivos objG;
+    private String RUTA;
     private String query;
     private boolean varEntrada;
     //boolean resultado;
@@ -23,7 +25,7 @@ public class Automatas {
      */
     public Automatas() {
         objBD = new BaseDatos();
-        objG = new GestionArchivos(objBD);
+        objG = new GestionArchivos();
         error = new Errores(objBD, objG);
         varEntrada = false;
     }
@@ -82,10 +84,11 @@ public class Automatas {
         String nombd = parts[1];
 
         error.chCrearBD("crearBD", nombd);
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
+        objG.crearDirectorio("BD"); //por si no existe
         objG.crearDirectorio("BD\\" + nombd + ".dbs");
         return true;
     }
@@ -106,12 +109,14 @@ public class Automatas {
         String nombbd = parts[1];
 
         error.chExisteBD("usarBD", nombbd);
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
-        objBD.nombre = nombbd; //no es necesario crear la estructura de datos
-        System.out.println("USANDO " + objBD.nombre);
+        objBD.setNombre(nombbd); //no es necesario crear la estructura de datos
+        RUTA = "BD\\" + objBD.getNombre() + ".dbs\\";
+        error.setRUTABD(RUTA);
+        System.out.println("USANDO " + objBD.getNombre());
         return true;
     }
 
@@ -144,7 +149,7 @@ public class Automatas {
         registro += " ";
 
         try {
-            n = objG.contarRengs("tablas");
+            n = objG.contarRengs(RUTA + "tablas");
             parts = parts[1].split(" \\)");
 
             //verifica si la tabla será difusa o determinista
@@ -163,14 +168,12 @@ public class Automatas {
                 System.out.println("ERROR en tipos de dato");
                 return false;
             }
-
             //crea un archivo con el nombre de la tabla
-            objG.crearArchivo("BD\\" + objBD.nombre + ".dbs\\" + nombtab + ".dat");
+            objG.crearArchivo(RUTA + nombtab + ".dat");
             System.out.println("TABLA " + nombtab + " CREADA CORRECTAMENTE");
             return true;
 
         } catch (IOException ex) {
-            //TODO
             ex.printStackTrace();
             return false;
         }
@@ -185,7 +188,7 @@ public class Automatas {
      */
     private String[] checkCreateTable() {
         error.chBdActiva("crearTabla");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return null;
         }
 
@@ -214,7 +217,7 @@ public class Automatas {
         }
 
         error.chTablaExiste("crearTabla", registro);
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return null;
         }
 
@@ -238,8 +241,7 @@ public class Automatas {
         registro += 0 + " ";
         registro += 0 + " ";
         registro += type + " ";
-        objG.escribir(n + 1, "tablas", registro, "final");
-
+        objG.escribir("BD\\" + objBD.getNombre() + ".dbs\\tablas", n + 1, registro, "final");
         return parts;
     }
 
@@ -270,7 +272,7 @@ public class Automatas {
                 registro += 0 + " ";
             }
             registro += n + 501 + " "; //tabid
-            registro += (objG.contarRengs("columnas") + 1) + " "; //colid
+            registro += (objG.contarRengs(RUTA + "columnas") + 1) + " "; //colid
             if (parts2[0].length() > 10) {
                 char partecitas[] = getChars(parts2[0], 10);
                 for (int j = 0; j < partecitas.length; j++) {
@@ -282,7 +284,7 @@ public class Automatas {
             registro += "-1 ";
             registro += "-1 ";
             registro += type;
-            objG.escribir(objG.contarRengs("columnas") + 1, "columnas", registro, "final");
+            objG.escribir(RUTA + "columnas", objG.contarRengs(RUTA + "columnas"), registro, "final");
         }
         return registro;
     }
@@ -359,7 +361,7 @@ public class Automatas {
 
         //checa si la base de datos está activa
         error.chBdActiva("crearIndice");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
@@ -425,16 +427,16 @@ public class Automatas {
         }
         parts = parts[1].split(" on ");
         //nomind = parts[0];
-        objI.nomind = parts[0];
-        registro = objI.nomind + " ";
+        objI.setNomind(parts[0]);
+        registro = objI.getNomind() + " ";
 
         //obtener nombre de la tabla y verifica si existe en la BD
         parts = parts[1].split(" \\( ");
-        objI.tabid = error.chTablaExiste("crearIndice", parts[0]);
-        if (error.dslerr != 0) {
+        objI.setTabid(error.chTablaExiste("crearIndice", parts[0]));
+        if (error.getDslerr() != 0) {
             return false;
         }
-        registro += objI.tabid + " ";
+        registro += objI.getTabid() + " ";
 
         //obtener columnas y verificar si existen en la tabla
         parts = parts[1].split(" \\)");
@@ -446,8 +448,8 @@ public class Automatas {
         colsid = new int[4];
         for (int i = 0; i < 4; i++) {
             if (i < nomcols.length) {
-                idcols = error.chColumnasExisten("crearIndice", nomcols[i], objI.tabid);
-                if (error.dslerr != 0) {
+                idcols = error.chColumnasExisten("crearIndice", nomcols[i], objI.getTabid());
+                if (error.getDslerr() != 0) {
                     return false;
                 }
                 colsid[i] = idcols;
@@ -457,31 +459,31 @@ public class Automatas {
                 registro += -1 + " ";
             }
         }
-        objI.colsid = colsid;
+        objI.setColsid(colsid);
 
         //obtener el indice id
-        indid = getMayorIndiceId(objI.tabid) + 1;
+        indid = getMayorIndiceId(objI.getTabid()) + 1;
         registro += indid + " ";
-        objI.indid = indid;
+        objI.setIndid(indid);
         registro += indtipo + " ";
-        objI.indtipo = indtipo;
+        objI.setIndtipo(indtipo);
 
         //checar si ya existe un indice con ese nombre
         error.chIndiceExiste("chCrearIndice", objI);
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
         try {
             //escribir en indices
             indid = objG.contarRengs("indices");
-            objG.escribir(++indid, "indices", registro, "final");
+            objG.escribir(RUTA + "indices", ++indid, registro, "final");
 
             //actualizar tablas
             list = objG.leer("tablas");
             for (int i = 0; i < list.size(); i++) {
                 parts = list.get(i).split(" ");
-                if (Integer.parseInt(parts[1]) == objI.tabid) {
+                if (Integer.parseInt(parts[1]) == objI.getTabid()) {
                     parts[6] = (Integer.parseInt(parts[6]) + 1) + "";
                     registro = "";
                     for (String part : parts) {
@@ -494,14 +496,13 @@ public class Automatas {
 
             for (int i = 0; i < list.size(); i++) {
                 if (i == 0) {
-                    objG.escribir(i, "tablas", list.get(i), "nuevo");
+                    objG.escribir(RUTA + "tablas", i, registro, "nuevo");
                 } else {
-                    objG.escribir(i, "tablas", list.get(i), "final");
+                    objG.escribir(RUTA + "tablas", i, list.get(i), "final");
                 }
             }
-
             //crear nuevo archivo
-            objG.crearArchivo("BD\\" + objBD.nombre + ".dbs\\" + objI.nomind + ".ix" + objI.indid);
+            objG.crearArchivo(RUTA + objI.getNomind() + ".ix" + objI.getIndid());
         } catch (Exception e) {
             System.out.println("ERROR: ESCRIBIRINIDCE");
         }
@@ -542,7 +543,7 @@ public class Automatas {
      */
     public boolean chCrearReferencia() {
         error.chBdActiva("chCrearReferencia");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
@@ -583,14 +584,14 @@ public class Automatas {
         //List<Columna> listColumnas;
         //for (int i = 0; i < 2; i++) {
 
-        for (int j = 0; j < objBD.listTablas.size(); j++) {
+        for (int j = 0; j < objBD.getListTablas().size(); j++) {
             //Tabla objT = listTablas.get(j); //Saca tabla por tabla
-            if (objBD.listTablas.get(j).tabid == idtab[0]) { //Compara id para encontrar la tabla indicada
-                for (int k = 0; k < objBD.listTablas.get(j).listColumnas.size(); k++) {
+            if (objBD.getListTablas().get(j).tabid == idtab[0]) { //Compara id para encontrar la tabla indicada
+                for (int k = 0; k < objBD.getListTablas().get(j).listColumnas.size(); k++) {
                     //Columna objC=objT.listColumnas.get(k);//Saca columna por columna
-                    if (objBD.listTablas.get(j).listColumnas.get(k).colid == idcolumn[0]) {//Compara id para encontrar la columna indicada
-                        objBD.listTablas.get(j).listColumnas.get(k).tabref = idtab[1];
-                        objBD.listTablas.get(j).listColumnas.get(k).colref = idcolumn[1];
+                    if (objBD.getListTablas().get(j).listColumnas.get(k).getColid() == idcolumn[0]) {//Compara id para encontrar la columna indicada
+                        objBD.getListTablas().get(j).listColumnas.get(k).setTabref(idtab[1]);
+                        objBD.getListTablas().get(j).listColumnas.get(k).setColref(idcolumn[1]);
                     }
                 }
             }
@@ -604,10 +605,10 @@ public class Automatas {
      *
      * @return
      */
-    //FALTA VERIFICAR LA REFERENCIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //TODO, FALTA VERIFICAR LA REFERENCIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private boolean chInsert() {
         error.chBdActiva("chInsert");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
         String parts[] = null, columnas[] = null, columnasaux, tabla[] = null, valores[] = null, nomtab;
@@ -630,7 +631,7 @@ public class Automatas {
         }
         nomtab = tabla[0]; //obtengo el nombre de la tabla
         tabid = error.chTablaExiste("chInsert", nomtab);  //verifico si la tabla existe y guardo el id de la tabla
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
@@ -674,7 +675,7 @@ public class Automatas {
         } else {
             for (int i = 0; i < columnas.length; i++) {
                 error.chColumnasExisten("chInsert", columnas[i], tabid);
-                if (error.dslerr != 0) {
+                if (error.getDslerr() != 0) {
                     return false;
                 }
             }
@@ -743,7 +744,7 @@ public class Automatas {
             if (!ordenColumnas[i][2].equals("null")) {
                 error.chComparaTipoColumnas("chInsert", tabid, Integer.parseInt(ordenColumnas[i][0]), valores[i]);
             }
-            if (error.dslerr != 0) {
+            if (error.getDslerr() != 0) {
                 return false;
             }
         }
@@ -758,7 +759,7 @@ public class Automatas {
             }
         }
         try {
-            objG.escribir(objG.contarRengs(nomtab + ".dat"), nomtab + ".dat", registro, "final");
+            objG.escribir(RUTA + nomtab + ".dat", objG.contarRengs(RUTA + nomtab + ".dat"), registro, "final");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -771,7 +772,7 @@ public class Automatas {
      */
     public boolean chSelect() {
         error.chBdActiva("chSelect");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
         query = query.toLowerCase();
@@ -802,7 +803,7 @@ public class Automatas {
 
         //checa si la base de datos está activa
         error.chBdActiva("update");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
@@ -818,7 +819,7 @@ public class Automatas {
         parts = parts[1].split(" set ");
         objT.nombtab = parts[0]; //nomtab
         res = error.chTablaExiste("update", objT.nombtab);
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
         objT.tabid = res; //tabid
@@ -829,13 +830,13 @@ public class Automatas {
         for (String columna : columnas) {
             parts = columna.split("=");
             res = error.chColumnasExisten("update", parts[0], objT.tabid);
-            if (error.dslerr != 0) {
+            if (error.getDslerr() != 0) {
                 return false;
             }
             objT.columnas.add(res + "");
             //verifica que cada valor corresponda al tipo de dato de cada columna
             error.chComparaTipoColumnas("update", objT.tabid, res, parts[1]);
-            if (error.dslerr != 0) {
+            if (error.getDslerr() != 0) {
                 return false;
             }
         }
@@ -849,7 +850,7 @@ public class Automatas {
 
     private boolean chShowDBFiles() {
         error.chBdActiva("crearTabla");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
@@ -886,7 +887,7 @@ public class Automatas {
 
     private boolean chShowSEDFiles() {
         error.chBdActiva("crearTabla");
-        if (error.dslerr != 0) {
+        if (error.getDslerr() != 0) {
             return false;
         }
 
@@ -898,7 +899,7 @@ public class Automatas {
     }
 
     private void showSEDFiles() {
-        SED.GestionArchivos objGsed = new SED.GestionArchivos();
+        GestionArchivos objGsed = new GestionArchivos();
         List<String> regDatos, regFiles;
         try {
             regDatos = objGsed.leer("SED/Datos");

@@ -1,10 +1,9 @@
-package Clases;
+package SGBD;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import Archivos.GestionArchivos;
 
 /**
  *
@@ -12,14 +11,31 @@ import java.util.logging.Logger;
  */
 public class Errores {
 
-    int dslerr;
-    BaseDatos objBD;
-    GestionArchivos objG;
+    private int dslerr;
+    private final BaseDatos objBD;
+    private final GestionArchivos objG;
+    private String RUTABD;
 
     public Errores(BaseDatos objBD, GestionArchivos objG) {
-        dslerr = 0;
         this.objBD = objBD;
         this.objG = objG;
+        dslerr = 0;
+    }
+
+    public int getDslerr() {
+        return dslerr;
+    }
+
+    public void setDslerr(int dslerr) {
+        this.dslerr = dslerr;
+    }
+
+    public String getRUTABD() {
+        return RUTABD;
+    }
+
+    public void setRUTABD(String RUTABD) {
+        this.RUTABD = RUTABD;
     }
 
     public void chCrearBD(String accion, String nomBD) {
@@ -38,11 +54,11 @@ public class Errores {
         }
     }
 
-    public boolean chTablaDifusa(int idtabla){
+    public boolean chTablaDifusa(int idtabla) {
         try {
-            String tabla = objG.obtenerRegistroByID("BD\\" + objBD.nombre + ".dbs\\" + "tablas", idtabla);
+            String tabla = objG.obtenerRegistroByID(RUTABD + "tablas", idtabla);
             String parts[] = tabla.split(" ");
-            if(!parts[(parts.length-1)].equals("F")){
+            if (!parts[(parts.length - 1)].equals("F")) {
                 return false;
             }
         } catch (IOException ex) {
@@ -50,12 +66,12 @@ public class Errores {
         }
         return true;
     }
-    
-    public boolean chColumnaDifusa(int idtabla){
+
+    public boolean chColumnaDifusa(int idtabla) {
         try {
-            String columna = objG.obtenerRegistroByID("BD\\" + objBD.nombre + ".dbs\\" + "columnas", idtabla);
+            String columna = objG.obtenerRegistroByID(RUTABD + "columnas", idtabla);
             String parts[] = columna.split(" ");
-            if(!parts[(parts.length-1)].equals("F")){
+            if (!parts[(parts.length - 1)].equals("F")) {
                 return false;
             }
         } catch (IOException ex) {
@@ -63,14 +79,14 @@ public class Errores {
         }
         return true;
     }
-    
-    public boolean chVariableLinguistica(String archivo,String etiqueta){
+
+    public boolean chVariableLinguistica(String archivo, String etiqueta) {
         String parts[];
         try {
-            List<String> etiquetas = objG.leer("BD\\" + objBD.nombre + ".dbs\\" + "columnas");
+            List<String> etiquetas = objG.leer(RUTABD + "columnas");
             for (int i = 0; i < etiquetas.size(); i++) {
                 parts = etiquetas.get(i).split(" ");
-                if(parts[0].equals(etiqueta)){
+                if (parts[0].equals(etiqueta)) {
                     return true;
                 }
             }
@@ -79,9 +95,9 @@ public class Errores {
         }
         return false;
     }
-    
+
     public void chBdActiva(String accion) {
-        if (objBD.nombre == null) {
+        if (objBD.getNombre() == null) {
             asignarCodigo(accion, "chBdActiva");
         }
     }
@@ -90,7 +106,7 @@ public class Errores {
     public int chTablaExiste(String accion, String nomtab) {
         List<String> list = null;
         String[] parts;
-        File archivo = new File("BD\\" + objBD.nombre + ".dbs\\" + nomtab + ".dat");
+        File archivo = new File(RUTABD + nomtab + ".dat");
         if (!archivo.exists()) {
             if (!accion.equals("crearTabla")) {
                 asignarCodigo(accion, "chTablaExiste");
@@ -99,7 +115,8 @@ public class Errores {
         }
 
         try {
-            list = objG.leer("tablas");
+            String prueba = RUTABD + "tablas";
+            list = objG.leer(prueba);
             for (int i = 0; i < list.size(); i++) {
                 parts = list.get(i).split(" "); //8 campos
                 if (parts[0].equals(nomtab)) {
@@ -142,16 +159,16 @@ public class Errores {
 
             for (int i = 0; i < list.size(); i++) {
                 parts = list.get(i).split(" ");
-                if (Integer.parseInt(parts[1]) == objI.tabid) {
-                    if (parts[0].equals(objI.nomind)) {
+                if (Integer.parseInt(parts[1]) == objI.getTabid()) {
+                    if (parts[0].equals(objI.getNomind())) {
                         asignarCodigo(accion, "chNombreIndice");
                         return false;
                     }
-                    if (Integer.parseInt(parts[2]) == objI.colsid[0]
-                            && Integer.parseInt(parts[3]) == objI.colsid[1]
-                            && Integer.parseInt(parts[4]) == objI.colsid[2]
-                            && Integer.parseInt(parts[5]) == objI.colsid[3]
-                            && parts[7].equals(objI.indtipo)) {
+                    if (Integer.parseInt(parts[2]) == objI.getColsid()[0]
+                            && Integer.parseInt(parts[3]) == objI.getColsid()[1]
+                            && Integer.parseInt(parts[4]) == objI.getColsid()[2]
+                            && Integer.parseInt(parts[5]) == objI.getColsid()[3]
+                            && parts[7].equals(objI.getIndtipo())) {
                         asignarCodigo(accion, "chIndiceExiste");
                         return false;
                     }
@@ -170,14 +187,14 @@ public class Errores {
 
         for (int k = 0; k < 2; k++) {
 
-            for (int i = 0; i < objBD.listTablas.size(); i++) {
+            for (int i = 0; i < objBD.getListTablas().size(); i++) {
 
-                if (objBD.listTablas.get(i).tabid == idtab[k]) { //Compara id para encontrar la tabla indicada
+                if (objBD.getListTablas().get(i).tabid == idtab[k]) { //Compara id para encontrar la tabla indicada
 
-                    for (int j = 0; j < objBD.listTablas.get(i).listColumnas.size(); j++) {
+                    for (int j = 0; j < objBD.getListTablas().get(i).listColumnas.size(); j++) {
 
-                        if (objBD.listTablas.get(i).listColumnas.get(j).colid == idcolumn[k]) {//Compara id para encontrar la columna indicada
-                            tipo[k] = objBD.listTablas.get(i).listColumnas.get(j).coltipo;
+                        if (objBD.getListTablas().get(i).listColumnas.get(j).getColid() == idcolumn[k]) {//Compara id para encontrar la columna indicada
+                            tipo[k] = objBD.getListTablas().get(i).listColumnas.get(j).getColtipo();
                         }
                     }
                 }
@@ -380,7 +397,7 @@ public class Errores {
     }
 
     public Tabla obtenerTabla(int tabid) {
-        List<Tabla> listTablas = objBD.listTablas;
+        List<Tabla> listTablas = objBD.getListTablas();
 
         for (int i = 0; i < listTablas.size(); i++) {
             Tabla objT = listTablas.get(i);

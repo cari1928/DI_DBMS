@@ -1,8 +1,8 @@
 package SED;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
+import Archivos.GestionArchivos;
 
 /**
  *
@@ -17,7 +17,7 @@ public class VariableEntrada {
     private int countShape;
     private Trapezoide objT;
     private SemiTrapezoide objSemiT;
-    GestionArchivos objG;
+    private GestionArchivos objG;
 
     //PUEDE ADAPTARSE PARA TRABAJAR TAMBIÉN CON VARIABLES DE SALIDA
     public VariableEntrada(String query) {
@@ -44,24 +44,14 @@ public class VariableEntrada {
             parts2 = parts2[1].split(" ");
 
             if (parts2[1].equals("f")) {
-                createDirectory(); //crea el directorio SED si no existe
+                objG.crearDirectorio("SED");//crea el directorio SED si no existe
                 askDiscourseUniverse(); //pide datos del universo de discurso y escribe en archivos
                 createTrapezoids();
             }
         }
     }
 
-    private void createDirectory() {
-        String directorio = "SED";
-        File index = new File(directorio);
-        if (!index.exists()) {
-            index.mkdir();
-            //Carpeta SED creada exitosamente
-        }
-    }
-
     private void askDiscourseUniverse() throws IOException {
-        GestionArchivos objG = new GestionArchivos();
         String registro, ruta = "SED/";
 
         registro = getRange(); //pide el rango de origen - fin del universo de discurso
@@ -75,7 +65,7 @@ public class VariableEntrada {
     }
 
     private String getUnits() {
-        String units = "";
+        String units;
         System.out.println("DATOS CORRESPONDIENTES A LA VARIABLE " + objU.getVariable());
         units = askStringData("INGRESE LAS unidades: ");
         objU.setUnidad(units);
@@ -112,7 +102,6 @@ public class VariableEntrada {
                 data = teclado.nextDouble();
                 flag = false; //saldrá del ciclo
             } catch (Exception e) {
-                //TODO
                 e.printStackTrace();
                 flag = true; //seguirá en el ciclo
             }
@@ -268,15 +257,4 @@ public class VariableEntrada {
         objSemiT.setPuntoC(new double[]{pc, 1});
     }
 
-    private void calcularTraslape() {
-        double nuevoOrigen;
-        if (aux == objU.getFin()) {
-            nuevoOrigen = (objU.getFin() - objT.getPuntoC2()[0]) * 0.6;
-        } else {
-            nuevoOrigen = (objT.getPuntoC()[0] - objU.getOrigen()) * 0.6;
-        }
-
-        nuevoOrigen = (objT.getPuntoC2()[0] + nuevoOrigen);
-        objU.setOrigen(nuevoOrigen);
-    }
 }
