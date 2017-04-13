@@ -1,0 +1,17 @@
+debug:
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++                       HOLA BIENVENIDO                       +
++                              A                              +
++                          TENISFSQL                          +
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>use database empresa
+USANDO empresa
+>insert into prueba2 ( id ) values ( <h> )
+java.io.EOFException
+	at java.io.RandomAccessFile.readChar(RandomAccessFile.java:773)
+	at Archivos.GestionArchivos.obtenerRegistroByID(GestionArchivos.java:95)
+	at SGBD.Errores.chTablaDifusa(Errores.java:59)
+	at SGBD.Automatas.chInsert(Automatas.java:723)
+	at SGBD.Automatas.iniAutomatas(Automatas.java:56)
+	at SGBD.Principal.main(Principal.java:28)
+BUILD SUCCESSFUL (total time: 24 seconds)

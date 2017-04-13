@@ -3,6 +3,7 @@ package SGBD;
 import java.io.IOException;
 import java.util.List;
 import Archivos.GestionArchivos;
+import java.util.ArrayList;
 
 /**
  *
@@ -18,11 +19,7 @@ public class Automatas {
     private String RUTA;
     private String query;
     private boolean varEntrada;
-    //boolean resultado;
 
-    /**
-     *
-     */
     public Automatas() {
         objBD = new BaseDatos();
         objG = new GestionArchivos();
@@ -30,19 +27,12 @@ public class Automatas {
         varEntrada = false;
     }
 
-    /**
-     *
-     * @param query
-     */
     public void setQuery(String query) {
         this.query = query;
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean iniAutomatas() {
+        error.setDslerr(0); //para futuras ejecuciones
 
         if (chCreaBD()) {
             return true;
@@ -50,6 +40,8 @@ public class Automatas {
             return true;
         } else if (chCrearTabla()) {
             varEntrada = true;
+            return true;
+        } else if (chInsert()) {
             return true;
         } else if (chCrearIndice()) {
             return true;
@@ -601,22 +593,22 @@ public class Automatas {
         return true;
     }
 
-    /**
-     *
-     * @return
-     */
     //TODO, FALTA VERIFICAR LA REFERENCIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private boolean chInsert() {
+        String[] parts, columnas = null, tabla, valores;
+        String[][] ordenColumnas;
+        String columnasaux, nomtab, aux;
+        List<String> tablas;
+        int tabid, nCols = 0;
+
         error.chBdActiva("chInsert");
         if (error.getDslerr() != 0) {
             return false;
         }
-        String parts[] = null, columnas[] = null, columnasaux, tabla[] = null, valores[] = null, nomtab;
-        int tabid;
-        String ordenColumnas[][];
-        query = query.toLowerCase(); //Lo convierto todo en minusculas
-        if (query.indexOf("insert into ") == -1) {
-            System.out.println("no valido");
+
+        query = query.toLowerCase(); //minúsculas
+        if (!query.contains("insert into ")) {
+            //System.out.println("SENTENCIA NO VÁLIDA"); //Ése mensaje no es adecuado para la lógica del programa
             return false;
         }
         tabla = query.split("insert into ");
@@ -630,32 +622,29 @@ public class Automatas {
             columnas = columnas[0].split(" "); //obtengo las columnas ya separadas
         }
         nomtab = tabla[0]; //obtengo el nombre de la tabla
-        tabid = error.chTablaExiste("chInsert", nomtab);  //verifico si la tabla existe y guardo el id de la tabla
+        tabid = error.chTablaExiste("insert", nomtab);  //verifico si la tabla existe y guardo el id de la tabla
         if (error.getDslerr() != 0) {
             return false;
         }
 
         //Obtener la candidad de columnas que tiene la tabla
-        List tablas;
-        String aux;
-        int n = 0;
         try {
-            tablas = objG.leer("tablas");
+            tablas = objG.leer(RUTA + "tablas");
             for (int i = 0; i < tablas.size(); i++) {
-                aux = tablas.get(i).toString();
+                aux = tablas.get(i);
                 parts = aux.split(" ");
                 if (Integer.parseInt(parts[1]) == tabid) {
-                    n = Integer.parseInt(parts[4]);
-                    i = tablas.size();
+                    nCols = Integer.parseInt(parts[4]); //toma el número de columnas de la tabla
+                    i = tablas.size(); //para terminar el ciclo
                 }
             }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        ordenColumnas = new String[n][3]; //Se construlle un arreglo donde tendra todas las columnas de la tabla con su id, su nombre y su valor a insertar
+        ordenColumnas = new String[nCols][3]; //tendra columnas de la tabla con id, nombre y valor a insertar
         if (columnas == null) { //preguntar si el usuario especifico las columnas en el insert si no se hace un arreglo con las columnas...
             try {
-                columnas = new String[n];
+                columnas = new String[nCols];
                 List Lcolumnas;
                 int cont = 0;
                 Lcolumnas = objG.leer("columnas");
@@ -673,18 +662,18 @@ public class Automatas {
                 ex.printStackTrace();
             }
         } else {
-            for (int i = 0; i < columnas.length; i++) {
-                error.chColumnasExisten("chInsert", columnas[i], tabid);
+            for (String columna : columnas) {
+                error.chColumnasExisten("chInsert", columna, tabid);
                 if (error.getDslerr() != 0) {
                     return false;
                 }
             }
             try {
-                List Lcolumnas; //aqui estaran todas las columnas de la BD
+                List<String> Lcolumnas; //aqui estaran todas las columnas de la BD
                 int cont = 0;
-                Lcolumnas = objG.leer("columnas"); //Se obtiene las columnas de la BD
+                Lcolumnas = objG.leer(RUTA + "columnas"); //Se obtiene las columnas de la BD
                 for (int i = 0; i < Lcolumnas.size(); i++) {
-                    columnasaux = Lcolumnas.get(i).toString(); //Se obtiene columna por columna
+                    columnasaux = Lcolumnas.get(i); //Se obtiene columna por columna
                     parts = columnasaux.split(" "); //Se dividi en sus campos que tiene
                     if (Integer.parseInt(parts[2]) == tabid) { //Se compara con el id de la tabla para ver si esa columna pertenese a la tabla a insertar
                         ordenColumnas[cont][0] = parts[3]; //se coloca la columna en el arreglo donde estaran todas las columnas de la tabla a insertar
@@ -701,22 +690,23 @@ public class Automatas {
         valores = valores[1].split(" \\)");
         valores = valores[0].split(", ");
         boolean FFT = false; //bandera tabla difusa (Flag Fuzzy Table)
-        for (int i = 0; i < ordenColumnas.length; i++) {
-            ordenColumnas[i][2] = "null";        //Se coloca la palabra null en todas las columnas para posteriormente escribir null en los campos que no se especificaron
+        for (String[] ordenColumna : ordenColumnas) {
+            ordenColumna[2] = "null"; //Se coloca la palabra null en todas las columnas para posteriormente escribir null en los campos que no se especificaron
         }
 
         for (int i = 0; i < columnas.length; i++) {
-            for (int j = 0; j < ordenColumnas.length; j++) {
-                if (columnas[i].equals(ordenColumnas[j][0])) {
-                    ordenColumnas[j][2] = valores[i];
+            for (String[] ordenColumna : ordenColumnas) {
+                if (columnas[i].equals(ordenColumna[1])) {
+                    ordenColumna[2] = valores[i];
                 }
             }
         }
 
+        //checa variables difusas
         for (int i = 0; i < ordenColumnas.length; i++) {
             if (!ordenColumnas[i][2].equals("null")) {
-                if (ordenColumnas[i][2].indexOf("'") == -1) { // no tiene comillas simples
-                    if (ordenColumnas[i][2].indexOf("<") != -1) { // contiene <...>
+                if (!ordenColumnas[i][2].contains("'")) { // no tiene comillas simples
+                    if (ordenColumnas[i][2].contains("<")) { // contiene <...>
                         if (!FFT) { //No se a verificado que la tabla sea difusa
                             if (FFT = error.chTablaDifusa(tabid)) { //Se checa que la tabla sea difuca
                                 if (error.chColumnaDifusa(Integer.parseInt(ordenColumnas[i][0]))) { //Verifica que la columna sea difusa...
@@ -763,6 +753,7 @@ public class Automatas {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+        System.out.println("REGISTRO INSERTADO");
         return true;
     }
 
@@ -792,10 +783,6 @@ public class Automatas {
         return true;
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean chUpdate() {
         int res;
         Tabla objT = new Tabla();
@@ -862,21 +849,33 @@ public class Automatas {
     }
 
     private void showBDFiles() {
+        String parts[];
+        List<String> lista, listTables = new ArrayList<>();
         try {
-            List<String> lista = objG.leer("tablas");
+            lista = objG.leer(RUTA + "tablas");
             System.out.println("TABLAS");
             for (int i = 0; i < lista.size(); i++) {
+                parts = lista.get(i).split(" ");
+                listTables.add(parts[0]); //guardo el nombre de las tablas
                 System.out.println(lista.get(i));
             }
 
+            for (String table : listTables) {
+                System.out.println("TABLA " + table);
+                lista = objG.leer(RUTA + table + ".dat");
+                for (String listT : lista) {
+                    System.out.println(listT);
+                }
+            }
+
             System.out.println("COLUMNAS");
-            lista = objG.leer("columnas");
+            lista = objG.leer(RUTA + "columnas");
             for (int i = 0; i < lista.size(); i++) {
                 System.out.println(lista.get(i));
             }
 
             System.out.println("INDICES");
-            lista = objG.leer("indices");
+            lista = objG.leer(RUTA + "indices");
             for (int i = 0; i < lista.size(); i++) {
                 System.out.println(lista.get(i));
             }

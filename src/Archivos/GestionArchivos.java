@@ -79,9 +79,10 @@ public class GestionArchivos {
     }
 
     public String obtenerRegistroByID(String nomFile, int llave) throws IOException {
+        char[] registro = new char[TAMAÑO];
         String convert;
-        StringBuilder builder = null;
-        //File archivo = new File(nomFile);
+        char tmp;
+
         raf = new RandomAccessFile(nomFile, "rw");
         if (llave > 1) {
             raf.seek((llave * 300) + (2 + (llave - 1) * 4));
@@ -92,8 +93,6 @@ public class GestionArchivos {
         if (llave != 0) {
             llave = raf.readInt(); //lee la llave
         }
-        char[] registro = new char[TAMAÑO];
-        char tmp;
         for (int i = 0; i < registro.length; i++) {
             tmp = raf.readChar();
             registro[i] = tmp;

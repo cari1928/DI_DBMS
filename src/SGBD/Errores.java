@@ -104,7 +104,7 @@ public class Errores {
 
     //return id de la tabla
     public int chTablaExiste(String accion, String nomtab) {
-        List<String> list = null;
+        List<String> list;
         String[] parts;
         File archivo = new File(RUTABD + nomtab + ".dat");
         if (!archivo.exists()) {
@@ -133,10 +133,10 @@ public class Errores {
         List<String> list;
         String[] parts;
         try {
-            list = objG.leer("columnas");
+            list = objG.leer(RUTABD + "columnas");
             for (int i = 0; i < list.size(); i++) {
-                parts = list.get(i).split(" "); //7 campos
-                if (Integer.parseInt(parts[2]) == idtab) {
+                parts = list.get(i).split(" "); //8 campos
+                if (Integer.parseInt(parts[2]) == idtab) { //busca el id de la tabla en cuestión
                     if (parts[4].equals(nomcols)) {
                         return Integer.parseInt(parts[3]);
                     }
@@ -212,7 +212,7 @@ public class Errores {
         String[] parts;
 
         try {
-            list = objG.leer("columnas");
+            list = objG.leer(RUTABD + "columnas");
             for (String list1 : list) {
                 parts = list1.split(" ");
 
@@ -359,7 +359,10 @@ public class Errores {
             case "insert":
                 switch (metodo) {
                     case "chBdActiva":
-                        dslerr = 288;//numero inventado
+                        dslerr = 600;//numero inventado
+                        break;
+                    case "chTablaExiste":
+                        dslerr = 601;
                         break;
                 }
                 break;
