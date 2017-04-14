@@ -90,8 +90,9 @@ public class GestionArchivos {
         if (llave == 1) {
             raf.seek(302);
         }
+        else
         if (llave != 0) {
-            llave = raf.readInt(); //lee la llave
+            llave = raf.readChar(); //lee la llave
         }
         for (int i = 0; i < registro.length; i++) {
             tmp = raf.readChar();
@@ -143,50 +144,6 @@ public class GestionArchivos {
 
         raf.close();
         return cont;
-    }
-
-    //ejemplo de uso
-    public static void main(String[] args) {
-        GestionArchivos objG = new GestionArchivos();
-        List<String> list = null;
-        try {
-            /*objG.escribir("pruebas", 0, "00 00 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "nuevo");
-            objG.escribir("pruebas", 1, "10 01 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
-            objG.escribir("pruebas", 2, "20 02 unidades variable jdsdfferrtgrt gtttgrtgewrfe ", "final");
-            objG.escribir("pruebas", 3, "30 03 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
-            objG.escribir("pruebas", 4, "40 04 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
-            objG.escribir("pruebas", 5, "50 05 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
-            objG.escribir("pruebas", 6, "60 06 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
-            objG.escribir("pruebas", 7, "70 07 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");*/
-            list = objG.leer("SED/v1");
-            for (int i = 0; i < list.size(); i++) {
-                System.out.println(list.get(i));
-            }
-            System.out.println("------------------------------------------------------------------");
-            /*String registro = objG.obtenerRegistroByID("pruebas", 7);
-            System.out.println(registro);
-            //registro += "9999";
-            System.out.println(registro);*/
-
-            //objG.actualizar("pruebas", 2, registro);
-            list = objG.leer("SED/v2");
-            for (int i = 0; i < list.size(); i++) {
-                System.out.println(list.get(i));
-            }
-            System.out.println("-------------------------------------------------------------------");
-            list = objG.leer("SED/v3");
-            for (int i = 0; i < list.size(); i++) {
-                System.out.println(list.get(i));
-            }
-            System.out.println("-------------------------------------------------------------------");
-            list = objG.leer("SED/FAM");
-            for (int i = 0; i < list.size(); i++) {
-                System.out.println(list.get(i));
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
     }
 
     public void crearDirectorio(String ruta) {
@@ -261,4 +218,48 @@ public class GestionArchivos {
         }
     }
 
+    //ejemplo de uso
+    public static void main(String[] args) {
+        GestionArchivos objG = new GestionArchivos();
+        List<String> list = null;
+        try {
+            /*objG.escribir("pruebas", 0, "00 00 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "nuevo");
+            objG.escribir("pruebas", 1, "10 01 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
+            objG.escribir("pruebas", 2, "20 02 unidades variable jdsdfferrtgrt gtttgrtgewrfe ", "final");
+            objG.escribir("pruebas", 3, "30 03 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
+            objG.escribir("pruebas", 4, "40 04 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
+            objG.escribir("pruebas", 5, "50 05 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
+            objG.escribir("pruebas", 6, "60 06 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");
+            objG.escribir("pruebas", 7, "70 07 unidades variable jdsdfferrtgrt gtttgrtgewrfe weferferferferfef wfwefwefwefwe", "final");*/
+            list = objG.leer("BD\\empresa.dbs\\tablas");
+            for (int i = 0; i < list.size(); i++) {
+                System.out.println(list.get(i));
+            }
+            System.out.println("------------------------------------------------------------------");
+            /*String registro = objG.obtenerRegistroByID("pruebas", 7);
+            System.out.println(registro);
+            //registro += "9999";
+            System.out.println(registro);*/
+
+            //objG.actualizar("pruebas", 2, registro);
+//            list = objG.leer("SED/v2");
+//            for (int i = 0; i < list.size(); i++) {
+//                System.out.println(list.get(i));
+//            }
+//            System.out.println("-------------------------------------------------------------------");
+//            list = objG.leer("SED/v3");
+//            for (int i = 0; i < list.size(); i++) {
+//                System.out.println(list.get(i));
+//            }
+//            System.out.println("-------------------------------------------------------------------");
+//            list = objG.leer("SED/FAM");
+//            for (int i = 0; i < list.size(); i++) {
+//                System.out.println(list.get(i));
+//            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    
 }

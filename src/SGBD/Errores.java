@@ -58,7 +58,7 @@ public class Errores {
         try {
             String tabla = objG.obtenerRegistroByID(RUTABD + "tablas", idtabla);
             String parts[] = tabla.split(" ");
-            if (!parts[(parts.length - 1)].equals("F")) {
+            if (!parts[(parts.length - 2)].equals("f")) {
                 return false;
             }
         } catch (IOException ex) {
@@ -71,7 +71,7 @@ public class Errores {
         try {
             String columna = objG.obtenerRegistroByID(RUTABD + "columnas", idtabla);
             String parts[] = columna.split(" ");
-            if (!parts[(parts.length - 1)].equals("F")) {
+            if (!parts[7].trim().equals("f")) {
                 return false;
             }
         } catch (IOException ex) {
@@ -83,10 +83,10 @@ public class Errores {
     public boolean chVariableLinguistica(String archivo, String etiqueta) {
         String parts[];
         try {
-            List<String> etiquetas = objG.leer(RUTABD + "columnas");
+            List<String> etiquetas = objG.leer("SED\\" + archivo);
             for (int i = 0; i < etiquetas.size(); i++) {
                 parts = etiquetas.get(i).split(" ");
-                if (parts[0].equals(etiqueta)) {
+                if (parts[3].equals(etiqueta)) {
                     return true;
                 }
             }
@@ -129,19 +129,16 @@ public class Errores {
         return -1;
     }
 
-    // return id de la columna
     public int chColumnasExisten(String accion, String nomcols, int idtab) {
         List<String> list;
         String[] parts;
         try {
             list = objG.leer(RUTABD + "columnas");
-
             for (int i = 0; i < list.size(); i++) {
                 parts = list.get(i).split(" "); //8 campos
-
                 if (Integer.parseInt(parts[2]) == idtab) { //busca el id de la tabla en cuestión
                     if (parts[4].equals(nomcols)) {
-                        return Integer.parseInt(parts[3]); //id de la columna
+                        return Integer.parseInt(parts[3]);
                     }
                 }
             }
@@ -151,7 +148,7 @@ public class Errores {
         }
 
         asignarCodigo(accion, "chColumnasExisten");
-        return -1; //indica que hubo error
+        return -1;
     }
 
     public boolean chIndiceExiste(String accion, Indice objI) {
@@ -187,21 +184,17 @@ public class Errores {
     public boolean chComparaTipoColumnas(String accion, int idtab[], int idcolumn[]) {
         boolean flag = true;
         char tipo[] = new char[2];
-        Tabla objT;
-        Columna objC;
 
         for (int k = 0; k < 2; k++) {
 
             for (int i = 0; i < objBD.getListTablas().size(); i++) {
-                objT = objBD.getListTablas().get(i); //para simplificar el código siguiente
 
-                if (objT.getTabid() == idtab[k]) { //Compara id para encontrar la tabla indicada
+                if (objBD.getListTablas().get(i).tabid == idtab[k]) { //Compara id para encontrar la tabla indicada
 
-                    for (int j = 0; j < objT.getListColumnas().size(); j++) {
-                        objC = objT.getListColumnas().get(j);
+                    for (int j = 0; j < objBD.getListTablas().get(i).listColumnas.size(); j++) {
 
-                        if (objC.getColid() == idcolumn[k]) { //Compara id para encontrar la columna indicada
-                            tipo[k] = objC.getColtipo();
+                        if (objBD.getListTablas().get(i).listColumnas.get(j).getColid() == idcolumn[k]) {//Compara id para encontrar la columna indicada
+                            tipo[k] = objBD.getListTablas().get(i).listColumnas.get(j).getColtipo();
                         }
                     }
                 }
@@ -280,7 +273,7 @@ public class Errores {
         //Después checar los tipos de cada columna
 
         Tabla objT = obtenerTabla(tabid);
-        List<Indice> listIndices = objT.getListIndices();
+        List<Indice> listIndices = objT.listIndices;
 
         for (int i = 0; i < listIndices.size(); i++) {
             //Indice objI = listIndices.
@@ -412,14 +405,10 @@ public class Errores {
         for (int i = 0; i < listTablas.size(); i++) {
             Tabla objT = listTablas.get(i);
 
-            if (objT.getTabid() == tabid) {
+            if (objT.tabid == tabid) {
                 return objT;
             }
         }
         return null;
-    }
-    
-    public void validateColumn () {
-        
     }
 }
