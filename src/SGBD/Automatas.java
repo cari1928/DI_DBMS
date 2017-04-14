@@ -13,16 +13,15 @@ public class Automatas {
 
     //TENER EN CUENTA
     //LOS MÉTODOS PRINCIPALES SON AQUELLOS CUYOS NOMBRES ESTÁN EN ESPAÑOL
-    private final BaseDatos objBD;
     private final Errores error;
     private final GestionArchivos objG;
+    private final BaseDatos objBD;
     private String RUTA;
     private String query;
     private boolean varEntrada;
     private List<String> Lcondiciones = new ArrayList<>();
-    private List<select> Lregistros = new ArrayList<>();   
+    private List<select> Lregistros = new ArrayList<>();
     private List<select> LseleccionadosCondicion = new ArrayList<>();
-    //boolean resultado;
 
     /**
      *
@@ -34,12 +33,24 @@ public class Automatas {
         varEntrada = false;
     }
 
-    /**
-     *
-     * @param query
-     */
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    public boolean isVarEntrada() {
+        return varEntrada;
+    }
+
+    public void setVarEntrada(boolean varEntrada) {
+        this.varEntrada = varEntrada;
+    }
+
+    public BaseDatos getObjBD() {
+        return objBD;
+    }
+
+    public String getRUTA() {
+        return RUTA;
     }
 
     /**
@@ -353,10 +364,13 @@ public class Automatas {
         return tmp;
     }
 
-    /**
-     *
-     * @return
-     */
+//posibles casos
+    //String query = "CREATE UNIQUE ASC INDEX iNomb ON tNomb(col1, col2, col3)";
+    //String query = "CREATE UNIQUE DESC INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE ASC INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE DESC INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE UNIQUE INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE INDEX iNomb ON tNomb(col1)";
     public boolean chCrearIndice() {
         char indtipo = '0';
         String registro;
@@ -372,13 +386,6 @@ public class Automatas {
             return false;
         }
 
-        //posibles casos
-        //String query = "CREATE UNIQUE ASC INDEX iNomb ON tNomb(col1, col2, col3)";
-        //String query = "CREATE UNIQUE DESC INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE ASC INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE DESC INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE UNIQUE INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE INDEX iNomb ON tNomb(col1)";
         query = query.toLowerCase();
         int casos = 1, res = 0;
         while (flag) {
@@ -549,6 +556,13 @@ public class Automatas {
      * @return
      */
     public boolean chCrearReferencia() {
+        Columna objC;
+        Tabla objT;
+        String[] parts, parts2;
+        int idtab[] = new int[2];
+        int idcolumn[] = new int[2];
+        String columns[] = new String[2];
+
         error.chBdActiva("chCrearReferencia");
         if (error.getDslerr() != 0) {
             return false;
@@ -562,12 +576,8 @@ public class Automatas {
         }
 
         //separar las tablas de las columnas
-        String parts[] = query.split("create reference");
+        parts = query.split("create reference");
         parts = parts[0].split(" ");
-        String parts2[];
-        int idtab[] = new int[2];
-        int idcolumn[] = new int[2];
-        String columns[] = new String[2];
         //valida existencia de tablas y columnas
         for (int i = 0; i < 2; i++) {
             parts2 = parts[i].split(".");
@@ -579,7 +589,6 @@ public class Automatas {
                 return false;
             }
             columns[i] = parts2[1];
-//            idcolumn[i] = error.chColumnasExisten("chCrearReferencia", columns, idtab[i])[0];
             if (idcolumn[i] != 0) {
                 return false;
             }
@@ -587,24 +596,21 @@ public class Automatas {
         if (!error.chComparaTipoColumnas("chCrearReferencia", idtab, idcolumn)) {
             return false;
         }
-        //List<Tabla> listTablas = objBD.listTablas;
-        //List<Columna> listColumnas;
-        //for (int i = 0; i < 2; i++) {
 
         for (int j = 0; j < objBD.getListTablas().size(); j++) {
-            //Tabla objT = listTablas.get(j); //Saca tabla por tabla
-            if (objBD.getListTablas().get(j).tabid == idtab[0]) { //Compara id para encontrar la tabla indicada
-                for (int k = 0; k < objBD.getListTablas().get(j).listColumnas.size(); k++) {
-                    //Columna objC=objT.listColumnas.get(k);//Saca columna por columna
-                    if (objBD.getListTablas().get(j).listColumnas.get(k).getColid() == idcolumn[0]) {//Compara id para encontrar la columna indicada
-                        objBD.getListTablas().get(j).listColumnas.get(k).setTabref(idtab[1]);
-                        objBD.getListTablas().get(j).listColumnas.get(k).setColref(idcolumn[1]);
+            objT = objBD.getListTablas().get(j); //para simplificar el código siguiente
+
+            if (objT.getTabid() == idtab[0]) { //Compara id para encontrar la tabla indicada
+                for (int k = 0; k < objT.getListColumnas().size(); k++) {
+                    objC = objT.getListColumnas().get(k); //para simplificar el código siguiente
+
+                    if (objC.getColid() == idcolumn[0]) {//Compara id para encontrar la columna indicada
+                        objC.setTabref(idtab[1]);
+                        objC.setColref(idcolumn[1]);
                     }
                 }
             }
         }
-        //}
-
         return true;
     }
 
@@ -618,7 +624,7 @@ public class Automatas {
             System.out.println("------------------------------------------------------------------");
         } catch (Exception e) {
         }
-        
+
         String[] parts, columnas = null, tabla, valores;
         String[][] ordenColumnas;
         String columnasaux, nomtab, aux;
@@ -732,8 +738,8 @@ public class Automatas {
                     if (ordenColumnas[i][2].contains("<")) { // contiene <...>
                         if (!FFT) { //No se a verificado que la tabla sea difusa
                             if (FFT = error.chTablaDifusa((tabid - 501))) { //Se checa que la tabla sea difuca
-                                if (error.chColumnaDifusa(Integer.parseInt(ordenColumnas[i][0]) - 1 )) { //Verifica que la columna sea difusa...
-                                    if (!error.chVariableLinguistica(nomtab + "." +ordenColumnas[i][1], ordenColumnas[i][2].split("<")[1].split(">")[0])) { //Verifica que la variable linguistica exista
+                                if (error.chColumnaDifusa(Integer.parseInt(ordenColumnas[i][0]) - 1)) { //Verifica que la columna sea difusa...
+                                    if (!error.chVariableLinguistica(nomtab + "." + ordenColumnas[i][1], ordenColumnas[i][2].split("<")[1].split(">")[0])) { //Verifica que la variable linguistica exista
                                         System.out.println("No se puede insertar una etiqueta lingüistica no existente en la variable difusa de la columna");
                                         return false;
                                     }
@@ -784,109 +790,110 @@ public class Automatas {
      *
      * @return
      */
-    public boolean chSelect() {
+    private boolean chSelect() {
+        String columnas[] = null, tablas[] = null, parts[], condiciones[] = null;
+        int res;
+
         error.chBdActiva("chSelect");
         if (error.getDslerr() != 0) {
             return false;
         }
+
         query = query.toLowerCase();
-        String columnas[] = null, tablas[] = null, parts[], condiciones[] = null;
         Lcondiciones = new ArrayList<>();
         Lregistros = new ArrayList<>();
-        int res = query.indexOf("select");
-        if (res == -1) {
+        if (!query.contains("select")) {
             return false;
         }
-        if (query.indexOf("*") == -1) {
+
+        if (!query.contains("*")) {
             parts = query.split("select ")[0].split(" from"); //obtengo las columnas que se desean seleccionar
-            if(parts[0].indexOf(", ") != -1){
+            if (parts[0].contains(", ")) {
                 //Tiene varias columnas seleccionadas...
                 columnas = parts[0].split(", ");
-            }
-            else{
+            } else {
                 //Tiene solo una columna seleccionada...
                 columnas = new String[1];
-                columnas[0] = parts[0];  
+                columnas[0] = parts[0];
             }
         } //Si no se indico ninguna columna la variable columnas estara en null.
         parts = query.split(" from ");
         parts[0] = parts[1];
-        if(parts[0].indexOf(" where ") != -1){
+        if (parts[0].contains(" where ")) {
             parts = parts[0].split(" where ");
         }
-            if(parts[0].indexOf(" inner join ") != -1){
-                //Tienen varias tablas a las que se hace referencia...
-                tablas = parts[0].split(" inner join ");
-            }
-            else{
-                //Tiene solo una tabla a la que se hace referencia
-                tablas = new String[1];
-                tablas[0] = parts[0];  
-            }
-        
-            obtener_todos_registros(tablas, 0);
-            
-        if(query.indexOf(" where ") != -1){ // Si hay condiciones...
+        if (parts[0].contains(" inner join ")) {
+            //Tienen varias tablas a las que se hace referencia...
+            tablas = parts[0].split(" inner join ");
+        } else {
+            //Tiene solo una tabla a la que se hace referencia
+            tablas = new String[1];
+            tablas[0] = parts[0];
+        }
+
+        obtener_todos_registros(tablas, 0);
+
+        if (query.contains(" where ")) { // Si hay condiciones...
             LseleccionadosCondicion = new ArrayList<>();
             tratado_condiciones(query.split(" where ")[1]); //Gurda todas las condiciones que tiene en una lista de String la forma en como guarda es condicion y operafor logico la siguiente condicion asi sucesivamente
-            
-        }
-        else{
+
+        } else {
             imprimeResultado(columnas, Lregistros);
         }
-        
+
         return true;
     }
-    
-    void imprimeResultado(String []columnas, List<select> Lregistros){
+
+    private void imprimeResultado(String[] columnas, List<select> Lregistros) {
         String resultado = "| ";
-            if(columnas == null){
-                for (int i = 0; i < Lregistros.size(); i++) {
-                    for (int j = 0; j < Lregistros.get(i).registro.size(); j++) {
-                        for (int k = 0; k < Lregistros.get(i).registro.get(j).columnas_list.size(); k++) {
-                            if(k == (Lregistros.get(i).registro.get(j).columnas_list.size() -1))
-                                resultado += Lregistros.get(i).registro.get(j).columnas_list.get(k).contenido;
-                            else
-                                resultado += Lregistros.get(i).registro.get(j).columnas_list.get(k).contenido+" | ";
+        if (columnas == null) {
+            for (int i = 0; i < Lregistros.size(); i++) {
+                for (int j = 0; j < Lregistros.get(i).registro.size(); j++) {
+                    for (int k = 0; k < Lregistros.get(i).registro.get(j).columnas_list.size(); k++) {
+                        if (k == (Lregistros.get(i).registro.get(j).columnas_list.size() - 1)) {
+                            resultado += Lregistros.get(i).registro.get(j).columnas_list.get(k).contenido;
+                        } else {
+                            resultado += Lregistros.get(i).registro.get(j).columnas_list.get(k).contenido + " | ";
                         }
-                        System.out.println(resultado);
-                        resultado = "| ";
                     }
+                    System.out.println(resultado);
+                    resultado = "| ";
                 }
             }
-            else{
-                for (int i = 0; i < columnas.length; i++) {
-                    for (int j = 0; j < Lregistros.size(); j++) {
-                        if(Lregistros.get(j).tabla.equals(columnas[i].split(".")[0])){
-                            for (int k = 0; k < Lregistros.get(j).registro.size(); k++) {
-                                for (int l = 0; l < Lregistros.get(j).registro.get(k).columnas_list.size(); l++) {
-                                    if(l == (Lregistros.get(j).registro.get(k).columnas_list.size() - 1))
-                                        resultado += Lregistros.get(j).registro.get(k).columnas_list.get(l).contenido;
-                                    else
-                                        resultado += Lregistros.get(j).registro.get(k).columnas_list.get(l).contenido+" | ";
+        } else {
+            for (int i = 0; i < columnas.length; i++) {
+                for (int j = 0; j < Lregistros.size(); j++) {
+                    if (Lregistros.get(j).tabla.equals(columnas[i].split(".")[0])) {
+                        for (int k = 0; k < Lregistros.get(j).registro.size(); k++) {
+                            for (int l = 0; l < Lregistros.get(j).registro.get(k).columnas_list.size(); l++) {
+                                if (l == (Lregistros.get(j).registro.get(k).columnas_list.size() - 1)) {
+                                    resultado += Lregistros.get(j).registro.get(k).columnas_list.get(l).contenido;
+                                } else {
+                                    resultado += Lregistros.get(j).registro.get(k).columnas_list.get(l).contenido + " | ";
                                 }
-                                System.out.println(resultado);
-                                resultado = "| ";
                             }
+                            System.out.println(resultado);
+                            resultado = "| ";
                         }
                     }
                 }
             }
+        }
     }
-    
-    void obtener_todos_registros(String tablas[], int posicion){
-        if(posicion < tablas.length){
+
+    private void obtener_todos_registros(String tablas[], int posicion) {
+        if (posicion < tablas.length) {
             try {
                 String parts[] = tablas[posicion].split(" ");
                 //Obtiene tabla
                 select objS = new select();;
-                List<String> tables = objG.leer("BD\\"+objBD.getNombre()+".dbs\\tablas");
-                List<String> columns = objG.leer("BD\\"+objBD.getNombre()+".dbs\\columnas");
-                List<String> registros = objG.leer("BD\\"+objBD.getNombre()+".dbs\\"+objS.tabla+".dat");
+                List<String> tables = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\tablas");
+                List<String> columns = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\columnas");
+                List<String> registros = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\" + objS.tabla + ".dat");
 
                 for (int i = 0; i < tables.size(); i++) {
                     String parts2[] = tables.get(i).split(" "); //se divide la informacion de cada registro de archivo tablas
-                    if(parts2[0].equals(parts[0])){ //se compara los nombres de l tabla
+                    if (parts2[0].equals(parts[0])) { //se compara los nombres de l tabla
                         objS.tabla = parts2[0]; //se obtiene el nombre de la tabla
                         objS.id = Integer.parseInt(parts2[2]); //se obtiene el id de la tabla
                         i = tables.size(); //i se iguala al tamaño de la lista tables para que salga del for
@@ -894,7 +901,7 @@ public class Automatas {
                         List<columnas> columnas_list = new ArrayList<>(); //se crea una lista de la clase columnas
                         for (int k = 0; k < columns.size(); k++) { // se recorren todas las columnas
                             String parts4[] = columns.get(k).split(" "); //se dividen la informacion de cada registro del archivo columnas
-                            if(Integer.parseInt(parts4[0]) == objS.id){ //preguntamos si el id de la tabla coincide con las columnas.
+                            if (Integer.parseInt(parts4[0]) == objS.id) { //preguntamos si el id de la tabla coincide con las columnas.
                                 objC = new columnas();                  //creamos el objeto columnas.
                                 objC.id = Integer.parseInt(parts4[1]);  //colocamos el id de la columna.
                                 objC.nombre = parts4[2];                //colocamos el nombre de la columna.
@@ -919,75 +926,67 @@ public class Automatas {
             }
         }
     }
-    
-    void tratado_condiciones(String condiciones){
+
+    private void tratado_condiciones(String condiciones) {
         int and = condiciones.indexOf(" and "), or = condiciones.indexOf(" or ");
-        if(and == -1 && or == -1){
+        if (and == -1 && or == -1) {
             Lcondiciones.add(condiciones);
-        }
-        else{
+        } else {
             String nueva_condiciones = "";
-            if(and < or || (and != -1 && or == -1)){
+            if (and < or || (and != -1 && or == -1)) {
                 for (int j = 0; j < condiciones.length(); j++) {
-                    if(j < and){
-                        nueva_condiciones +=condiciones.charAt(j);
-                        if(j == (and - 1)){
+                    if (j < and) {
+                        nueva_condiciones += condiciones.charAt(j);
+                        if (j == (and - 1)) {
                             Lcondiciones.add(nueva_condiciones);
                             Lcondiciones.add("and");
                             nueva_condiciones = "";
-                            j = (and+4);
+                            j = (and + 4);
                         }
-                    }
-                    else{
-                        nueva_condiciones +=condiciones.charAt(j);
+                    } else {
+                        nueva_condiciones += condiciones.charAt(j);
                     }
                 }
                 tratado_condiciones(nueva_condiciones);
-            }
-            else{
-                if(or < and  || (or != -1 && and == -1)){
+            } else {
+                if (or < and || (or != -1 && and == -1)) {
                     or = condiciones.indexOf(" or ");
                     for (int j = 0; j < condiciones.length(); j++) {
-                        if(j < or){
-                            nueva_condiciones +=condiciones.charAt(j);
-                            if(j == (or - 1)){
+                        if (j < or) {
+                            nueva_condiciones += condiciones.charAt(j);
+                            if (j == (or - 1)) {
                                 Lcondiciones.add(nueva_condiciones);
                                 Lcondiciones.add("or");
                                 nueva_condiciones = "";
-                                j = (or+3);
+                                j = (or + 3);
                             }
-                        }
-                        else{
-                        nueva_condiciones +=condiciones.charAt(j);
+                        } else {
+                            nueva_condiciones += condiciones.charAt(j);
                         }
                     }
                     tratado_condiciones(nueva_condiciones);
                 }
             }
         }
-        
-    }
-    
-    /*String[] chCondicionDeterminista(String condicion){
-        String []registros;
-        //...
-        return registros;
-    }
-    
-    String[] chCondicionDifusa(String condicion){
-        String []registros;
-        //...
-        return registros;
-    }*/
 
-    /**
-     *
-     * @return
-     */
+    }
+
+    private String[] chCondicionDeterminista(String condicion) {
+        return null; //retorna registros
+    }
+
+    private String[] chCondicionDifusa(String condicion) {
+        return null; //retorna registros
+    }
+
+//        posibles casos
+//        query = "UPDATE prueba SET col1=val1, col2=val2 WHERE col1=D AND col2=F";
+//        query = "UPDATE prueba SET col1=val1 WHERE condicion col1=D OR col=D";
+//        query = "UPDATE prueba SET col1=val1";
     public boolean chUpdate() {
         int res;
         Tabla objT = new Tabla();
-        String[] columnas;
+        String[] columnas, parts;
 
         //checa si la base de datos está activa
         error.chBdActiva("update");
@@ -995,45 +994,108 @@ public class Automatas {
             return false;
         }
 
-        //posibles casos
-//        query = "UPDATE prueba SET col1=val1, col2=val2 WHERE condicion";
-//        query = "UPDATE prueba SET col1=val1 WHERE condicion";
-//        query = "UPDATE prueba SET col1=val1";
         query = query.toLowerCase();
-        String[] parts = query.split("update ");
+        parts = query.split("update ");
         if (parts.length == 1) { //no hay update
             return false;
         }
         parts = parts[1].split(" set ");
-        objT.nombtab = parts[0]; //nomtab
-        res = error.chTablaExiste("update", objT.nombtab);
+        objT.setNombtab(parts[0]); //Nombre de la tabla
+        res = error.chTablaExiste("update", objT.getNombtab());
         if (error.getDslerr() != 0) {
             return false;
         }
-        objT.tabid = res; //tabid
+        objT.setTabid(res); //id de la tabla
 
-        //obtiene columnas
-        parts = parts[1].split(" where ");
-        columnas = parts[0].split(",");
-        for (String columna : columnas) {
-            parts = columna.split("=");
-            res = error.chColumnasExisten("update", parts[0], objT.tabid);
-            if (error.getDslerr() != 0) {
-                return false;
-            }
-            objT.columnas.add(res + "");
-            //verifica que cada valor corresponda al tipo de dato de cada columna
-            error.chComparaTipoColumnas("update", objT.tabid, res, parts[1]);
-            if (error.getDslerr() != 0) {
-                return false;
+        if (parts[1].contains("where")) {
+            parts = parts[1].split(" where "); //obtiene columnas del where
+
+            //comenzar a recorrer buscando las condiciones
+            //teniendo en cuenta los AND y OR
+            whereConditions(parts, objT);
+
+            columnas = parts[0].split(",");
+            for (String columna : columnas) {
+                parts = columna.split("=");
+                res = error.chColumnasExisten("update", parts[0], objT.getTabid()); //obtiene el id de la columna
+                if (error.getDslerr() != 0) {
+                    return false;
+                }
+                objT.getColumnas().add(res + "");
+
+                //verifica que cada valor corresponda al tipo de dato de cada columna
+                error.chComparaTipoColumnas("update", objT.getTabid(), res, parts[1]);
+                if (error.getDslerr() != 0) {
+                    return false;
+                }
+
+                if (!whereConditions(parts, objT)) {
+                    return false;
+                }
             }
         }
 
+        //TODO
+        //checar tipo de dato de cada columna de update, no de where
         //checar integridad
         //checar valores de indices
         //actualizar archivo tablas
         //actualizar archivo indices
         return true;
+    }
+
+    //se encarga de procesar un estatuto where para obtener los operadores lógicos booleanos y las condiciones
+    private boolean whereConditions(String[] where, Tabla objT) {
+        List<String> logic = new ArrayList<>();
+        List<Boolean> results = new ArrayList<>();
+        String[] whereElements, parts;
+        whereElements = where[1].split(" ");
+
+        for (String whereE : whereElements) { //recorre cada elemento del estatuto where
+
+            if (whereE.equals("and") || whereE.equals("or")) {
+                logic.add(whereE); //guarda los operadores
+            } else {
+                //guarda el resultado booleano de cada condición
+                if (whereE.contains("=")) {
+                    //condición determinista
+                    parts = whereE.split("=");
+                    //valida si la columna existe en la tabla
+                    error.chColumnasExisten("update", parts[0], objT.getTabid());
+                    if (error.getDslerr() != 0) {
+                        return false;
+                    }
+                    //TODO, modificar
+                    //results.add(chCrispCondition(whereE));
+                } else {
+                    //condición difusa
+                    //TODO, modificar
+                    //results.add(chFuzzyCondition(whereE));
+                }
+            }
+        }
+
+        return chConditions(logic, results);
+
+    }
+
+    //procesa las condiciones concatenando los resultados booleanos
+    private boolean chConditions(List<String> logic, List<Boolean> results) {
+        boolean r = results.get(0); //obtiene el resultado de la primera condición
+        for (int i = 1; i < results.size(); i++) { //recorre los resultados de las condiciones
+
+            for (String log : logic) { //recorre los operadores lógicos guardados
+
+                if (log.equals("and")) {
+                    r &= results.get(i);
+                } else {
+                    r |= results.get(i);
+                }
+
+            }
+        }
+
+        return r;
     }
 
     private boolean chShowDBFiles() {
@@ -1117,27 +1179,22 @@ public class Automatas {
         }
     }
 
-    public boolean isVarEntrada() {
-        return varEntrada;
+    public class select {
+
+        List<registro> registro = new ArrayList<>();
+        String tabla;
+        int id;
     }
 
-    public void setVarEntrada(boolean varEntrada) {
-        this.varEntrada = varEntrada;
-    }
-    
-    public class select{
-         List<registro> registro = new ArrayList<>();
-         String tabla;
-         int id;
-    }
-    
-    public class registro{
+    public class registro {
+
         List<columnas> columnas_list = new ArrayList<>();
     }
-    
-    public class columnas{
-          String  nombre, contenido;
-          int id;
+
+    public class columnas {
+
+        String nombre, contenido;
+        int id;
     }
-    
+
 }

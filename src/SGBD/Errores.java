@@ -184,17 +184,20 @@ public class Errores {
     public boolean chComparaTipoColumnas(String accion, int idtab[], int idcolumn[]) {
         boolean flag = true;
         char tipo[] = new char[2];
+        Tabla objT;
+        Columna objC;
 
         for (int k = 0; k < 2; k++) {
 
             for (int i = 0; i < objBD.getListTablas().size(); i++) {
+                objT = objBD.getListTablas().get(i); //para simplificar el código siguiente
+                if (objT.getTabid() == idtab[k]) { //Compara id para encontrar la tabla indicada
 
-                if (objBD.getListTablas().get(i).tabid == idtab[k]) { //Compara id para encontrar la tabla indicada
+                    for (int j = 0; j < objT.getListColumnas().size(); j++) {
+                        objC = objT.getListColumnas().get(j);
 
-                    for (int j = 0; j < objBD.getListTablas().get(i).listColumnas.size(); j++) {
-
-                        if (objBD.getListTablas().get(i).listColumnas.get(j).getColid() == idcolumn[k]) {//Compara id para encontrar la columna indicada
-                            tipo[k] = objBD.getListTablas().get(i).listColumnas.get(j).getColtipo();
+                        if (objC.getColid() == idcolumn[k]) { //Compara id para encontrar la columna indicada
+                            tipo[k] = objC.getColtipo();
                         }
                     }
                 }
@@ -273,7 +276,7 @@ public class Errores {
         //Después checar los tipos de cada columna
 
         Tabla objT = obtenerTabla(tabid);
-        List<Indice> listIndices = objT.listIndices;
+        List<Indice> listIndices = objT.getListIndices();
 
         for (int i = 0; i < listIndices.size(); i++) {
             //Indice objI = listIndices.
@@ -405,7 +408,7 @@ public class Errores {
         for (int i = 0; i < listTablas.size(); i++) {
             Tabla objT = listTablas.get(i);
 
-            if (objT.tabid == tabid) {
+            if (objT.getTabid() == tabid) {
                 return objT;
             }
         }

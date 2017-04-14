@@ -89,10 +89,8 @@ public class GestionArchivos {
         }
         if (llave == 1) {
             raf.seek(302);
-        }
-        else
-        if (llave != 0) {
-            llave = raf.readChar(); //lee la llave
+        } else if (llave != 0) {
+            llave = raf.readInt();
         }
         for (int i = 0; i < registro.length; i++) {
             tmp = raf.readChar();
@@ -256,10 +254,9 @@ public class GestionArchivos {
 //            for (int i = 0; i < list.size(); i++) {
 //                System.out.println(list.get(i));
 //            }
-
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-    
+
 }

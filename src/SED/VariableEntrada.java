@@ -3,6 +3,7 @@ package SED;
 import java.io.IOException;
 import java.util.Scanner;
 import Archivos.GestionArchivos;
+import SGBD.Automatas;
 
 /**
  *
@@ -13,15 +14,17 @@ public class VariableEntrada {
     private final String query;
     private final UniversoDiscurso objU;
     private final Scanner teclado;
+    private final GestionArchivos objG;
+    private final Automatas objA;
     private double aux;
     private int countShape;
     private Trapezoide objT;
     private SemiTrapezoide objSemiT;
-    private GestionArchivos objG;
 
     //PUEDE ADAPTARSE PARA TRABAJAR TAMBIÉN CON VARIABLES DE SALIDA
-    public VariableEntrada(String query) {
+    public VariableEntrada(String query, Automatas objA) {
         this.query = query.toLowerCase();
+        this.objA = objA;
         teclado = new Scanner(System.in);
         objU = new UniversoDiscurso();
         objG = new GestionArchivos();
@@ -44,7 +47,7 @@ public class VariableEntrada {
             parts2 = parts2[1].split(" ");
 
             if (parts2[1].equals("f")) {
-                objG.crearDirectorio("SED");//crea el directorio SED si no existe
+                objG.crearDirectorio(objA.getRUTA() + "SED");//crea el directorio SED si no existe
                 askDiscourseUniverse(); //pide datos del universo de discurso y escribe en archivos
                 createTrapezoids();
             }
@@ -52,7 +55,7 @@ public class VariableEntrada {
     }
 
     private void askDiscourseUniverse() throws IOException {
-        String registro, ruta = "SED/";
+        String registro, ruta = objA.getRUTA() + "SED/";
 
         registro = getRange(); //pide el rango de origen - fin del universo de discurso
         registro += " " + getUnits(); //pide las unidades 
@@ -129,7 +132,7 @@ public class VariableEntrada {
     }
 
     private void createTrapezoids() throws IOException {
-        String registro, opt, ruta = "SED/" + objU.getTable() + "." + objU.getVariable(), orientacion;
+        String registro, opt, ruta = objA.getRUTA() + "SED/" + objU.getTable() + "." + objU.getVariable(), orientacion;
         Double pc1, pc2;
         boolean flag;
         countShape = 1;
