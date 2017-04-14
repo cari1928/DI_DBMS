@@ -31,6 +31,14 @@ public class Automatas {
         this.query = query;
     }
 
+    public boolean isVarEntrada() {
+        return varEntrada;
+    }
+
+    public void setVarEntrada(boolean varEntrada) {
+        this.varEntrada = varEntrada;
+    }
+
     public boolean iniAutomatas() {
         error.setDslerr(0); //para futuras ejecuciones
 
@@ -60,10 +68,6 @@ public class Automatas {
         return false; //paso por todos los autómatas y aún así llegó hasta este punto
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean chCreaBD() {
         query = query.toLowerCase();
         int res = query.indexOf("create database ");
@@ -85,10 +89,6 @@ public class Automatas {
         return true;
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean chUsarBD() {
         String[] parts;
 
@@ -338,10 +338,13 @@ public class Automatas {
         return tmp;
     }
 
-    /**
-     *
-     * @return
-     */
+//posibles casos
+    //String query = "CREATE UNIQUE ASC INDEX iNomb ON tNomb(col1, col2, col3)";
+    //String query = "CREATE UNIQUE DESC INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE ASC INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE DESC INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE UNIQUE INDEX iNomb ON tNomb(col1)";
+    //String query = "CREATE INDEX iNomb ON tNomb(col1)";
     public boolean chCrearIndice() {
         char indtipo = '0';
         String registro;
@@ -357,13 +360,6 @@ public class Automatas {
             return false;
         }
 
-        //posibles casos
-        //String query = "CREATE UNIQUE ASC INDEX iNomb ON tNomb(col1, col2, col3)";
-        //String query = "CREATE UNIQUE DESC INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE ASC INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE DESC INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE UNIQUE INDEX iNomb ON tNomb(col1)";
-        //String query = "CREATE INDEX iNomb ON tNomb(col1)";
         query = query.toLowerCase();
         int casos = 1, res = 0;
         while (flag) {
@@ -502,11 +498,6 @@ public class Automatas {
         return true;
     }
 
-    /**
-     *
-     * @param tabid
-     * @return
-     */
     public int getMayorIndiceId(int tabid) {
         String[] parts;
         List<String> list;
@@ -529,11 +520,14 @@ public class Automatas {
         return mayor;
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean chCrearReferencia() {
+        Columna objC;
+        Tabla objT;
+        String[] parts, parts2;
+        int idtab[] = new int[2];
+        int idcolumn[] = new int[2];
+        String columns[] = new String[2];
+
         error.chBdActiva("chCrearReferencia");
         if (error.getDslerr() != 0) {
             return false;
@@ -547,12 +541,9 @@ public class Automatas {
         }
 
         //separar las tablas de las columnas
-        String parts[] = query.split("create reference");
+        parts = query.split("create reference");
         parts = parts[0].split(" ");
-        String parts2[];
-        int idtab[] = new int[2];
-        int idcolumn[] = new int[2];
-        String columns[] = new String[2];
+
         //valida existencia de tablas y columnas
         for (int i = 0; i < 2; i++) {
             parts2 = parts[i].split(".");
@@ -564,7 +555,6 @@ public class Automatas {
                 return false;
             }
             columns[i] = parts2[1];
-//            idcolumn[i] = error.chColumnasExisten("chCrearReferencia", columns, idtab[i])[0];
             if (idcolumn[i] != 0) {
                 return false;
             }
@@ -572,23 +562,21 @@ public class Automatas {
         if (!error.chComparaTipoColumnas("chCrearReferencia", idtab, idcolumn)) {
             return false;
         }
-        //List<Tabla> listTablas = objBD.listTablas;
-        //List<Columna> listColumnas;
-        //for (int i = 0; i < 2; i++) {
 
         for (int j = 0; j < objBD.getListTablas().size(); j++) {
-            //Tabla objT = listTablas.get(j); //Saca tabla por tabla
-            if (objBD.getListTablas().get(j).tabid == idtab[0]) { //Compara id para encontrar la tabla indicada
-                for (int k = 0; k < objBD.getListTablas().get(j).listColumnas.size(); k++) {
-                    //Columna objC=objT.listColumnas.get(k);//Saca columna por columna
-                    if (objBD.getListTablas().get(j).listColumnas.get(k).getColid() == idcolumn[0]) {//Compara id para encontrar la columna indicada
-                        objBD.getListTablas().get(j).listColumnas.get(k).setTabref(idtab[1]);
-                        objBD.getListTablas().get(j).listColumnas.get(k).setColref(idcolumn[1]);
+            objT = objBD.getListTablas().get(j); //para simplificar el código siguiente
+
+            if (objT.getTabid() == idtab[0]) { //Compara id para encontrar la tabla indicada
+                for (int k = 0; k < objT.getListColumnas().size(); k++) {
+                    objC = objT.getListColumnas().get(k); //para simplificar el código siguiente
+
+                    if (objC.getColid() == idcolumn[0]) {//Compara id para encontrar la columna indicada
+                        objC.setTabref(idtab[1]);
+                        objC.setColref(idcolumn[1]);
                     }
                 }
             }
         }
-        //}
 
         return true;
     }
@@ -783,10 +771,14 @@ public class Automatas {
         return true;
     }
 
+//        posibles casos
+//        query = "UPDATE prueba SET col1=val1, col2=val2 WHERE col1=D AND col2=F";
+//        query = "UPDATE prueba SET col1=val1 WHERE condicion col1=D OR col=D";
+//        query = "UPDATE prueba SET col1=val1";
     public boolean chUpdate() {
         int res;
         Tabla objT = new Tabla();
-        String[] columnas;
+        String[] columnas, parts;
 
         //checa si la base de datos está activa
         error.chBdActiva("update");
@@ -794,45 +786,118 @@ public class Automatas {
             return false;
         }
 
-        //posibles casos
-//        query = "UPDATE prueba SET col1=val1, col2=val2 WHERE condicion";
-//        query = "UPDATE prueba SET col1=val1 WHERE condicion";
-//        query = "UPDATE prueba SET col1=val1";
         query = query.toLowerCase();
-        String[] parts = query.split("update ");
+        parts = query.split("update ");
         if (parts.length == 1) { //no hay update
             return false;
         }
+
         parts = parts[1].split(" set ");
-        objT.nombtab = parts[0]; //nomtab
-        res = error.chTablaExiste("update", objT.nombtab);
+        objT.setNombtab(parts[0]); //Nombre de la tabla
+        res = error.chTablaExiste("update", objT.getNombtab());
         if (error.getDslerr() != 0) {
             return false;
         }
-        objT.tabid = res; //tabid
+        objT.setTabid(res); //id de la tabla
 
-        //obtiene columnas
-        parts = parts[1].split(" where ");
-        columnas = parts[0].split(",");
-        for (String columna : columnas) {
-            parts = columna.split("=");
-            res = error.chColumnasExisten("update", parts[0], objT.tabid);
-            if (error.getDslerr() != 0) {
+        if (parts[1].contains("where")) {
+            parts = parts[1].split(" where "); //obtiene columnas del where
+
+            //comenzar a recorrer buscando las condiciones
+            //teniendo en cuenta los AND y OR
+            whereConditions(parts, objT);
+
+            columnas = parts[0].split(",");
+            for (String columna : columnas) {
+                parts = columna.split("=");
+                res = error.chColumnasExisten("update", parts[0], objT.getTabid()); //obtiene el id de la columna
+                if (error.getDslerr() != 0) {
+                    return false;
+                }
+                objT.getColumnas().add(res + "");
+
+                //verifica que cada valor corresponda al tipo de dato de cada columna
+                error.chComparaTipoColumnas("update", objT.getTabid(), res, parts[1]);
+                if (error.getDslerr() != 0) {
+                    return false;
+                }
+            }
+
+            if (!whereConditions(parts, objT)) {
                 return false;
             }
-            objT.columnas.add(res + "");
-            //verifica que cada valor corresponda al tipo de dato de cada columna
-            error.chComparaTipoColumnas("update", objT.tabid, res, parts[1]);
-            if (error.getDslerr() != 0) {
-                return false;
-            }
+            //modifica archivos
         }
 
+        //TODO
+        //checar tipo de dato de cada columna de update, no de where
         //checar integridad
         //checar valores de indices
         //actualizar archivo tablas
         //actualizar archivo indices
         return true;
+    }
+
+    //se encarga de procesar un estatuto where para obtener los operadores lógicos booleanos y las condiciones
+    private boolean whereConditions(String[] where, Tabla objT) {
+        List<String> logic = new ArrayList<>();
+        List<Boolean> results = new ArrayList<>();
+        String[] whereElements, parts;
+        whereElements = where[1].split(" ");
+
+        for (String whereE : whereElements) { //recorre cada elemento del estatuto where
+
+            if (whereE.equals("and") || whereE.equals("or")) {
+                logic.add(whereE); //guarda los operadores
+            } else {
+                //guarda el resultado booleano de cada condición
+                if (whereE.contains("=")) {
+                    //condición determinista
+                    parts = whereE.split("=");
+                    //valida si la columna existe en la tabla
+                    error.chColumnasExisten("update", parts[0], objT.getTabid());
+                    if (error.getDslerr() != 0) {
+                        return false;
+                    }
+                    results.add(chCrispCondition(whereE));
+                } else {
+                    //condición difusa
+                    results.add(chFuzzyCondition(whereE));
+                }
+            }
+        }
+
+        return chConditions(logic, results);
+
+    }
+
+    //procesa las condiciones concatenando los resultados booleanos
+    private boolean chConditions(List<String> logic, List<Boolean> results) {
+        boolean r = results.get(0); //obtiene el resultado de la primera condición
+        for (int i = 1; i < results.size(); i++) { //recorre los resultados de las condiciones
+
+            for (String log : logic) { //recorre los operadores lógicos guardados
+
+                if (log.equals("and")) {
+                    r &= results.get(i);
+                } else {
+                    r |= results.get(i);
+                }
+
+            }
+        }
+
+        return r;
+    }
+
+    private boolean chFuzzyCondition(String condition) {
+        //verifica si la condición es verdadera
+        return false;
+    }
+
+    private boolean chCrispCondition(String condition) {
+        //verifica si la condición es verdadera
+        return false;
     }
 
     private boolean chShowDBFiles() {
@@ -916,11 +981,4 @@ public class Automatas {
         }
     }
 
-    public boolean isVarEntrada() {
-        return varEntrada;
-    }
-
-    public void setVarEntrada(boolean varEntrada) {
-        this.varEntrada = varEntrada;
-    }
 }
