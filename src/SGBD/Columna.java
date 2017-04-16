@@ -8,21 +8,21 @@ public class Columna {
 
     private int tabid;
     private int colid; //id
-    private char[] nomcol = new char[10]; //nombre
+    private char[] nomcol = new char[10]; //nombre columna
     private char coltipo;
     private int coltam;
     private int tabref;
     private int colref;
 
     private String contenido;
-    private String NomColS;
+    private String nomtab; //nombre tabla
 
-    public String getNomColS() {
-        return NomColS;
+    public String getNomtab() {
+        return nomtab;
     }
 
-    public void setNomColS(String NomColS) {
-        this.NomColS = NomColS;
+    public void setNomtab(String nomtab) {
+        this.nomtab = nomtab;
     }
     
     public String getContenido() {

@@ -233,6 +233,9 @@ public class Errores {
                             }
 
                         } else if (parts[0].contains("int")) {
+                            if(colvalue.contains("<")) {
+                                return true;
+                            }
                             try {
                                 Integer.parseInt(colvalue);
                             } catch (Exception e) {

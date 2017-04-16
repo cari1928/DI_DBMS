@@ -174,7 +174,7 @@ public class Automatas {
             parts = parts[1].split(" \\)");
 
             //verifica si la tabla será difusa o determinista
-            type = checkFuzziness(parts);
+            type = checkFuzziness(parts[0].split(", "));
             if (type == null) {
                 //TODO, intentar mantener una mejor gestión en los mensajes de error
                 System.out.println("ERROR con tipo determinista o difuso");
@@ -336,23 +336,16 @@ public class Automatas {
 
     private String checkFuzziness(String[] parts) {
         String[] parts2;
+        String type = "d";
         for (String part : parts) {
-            parts2 = part.split(", ");
-            if (parts2.length == 2) {
-                parts2 = parts2[1].split(":");
-            } else {
-                parts2 = parts2[0].split(":");
-            }
-
+            parts2 = part.split(":");
             parts2 = parts2[1].split(" ");
 
-            if (parts2[1].equals("d") || parts2[1].equals("f")) {
+            if (parts2[1].equals("f")) {
                 return parts2[1];
-            } else {
-                return null;
             }
         }
-        return null;
+        return type;
     }
 
     private char[] getChars(String cadena, int tamaño) {
@@ -619,20 +612,12 @@ public class Automatas {
 
     //TODO, FALTA VERIFICAR LA REFERENCIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private boolean chInsert() {
-//        try {
-//            List<String> list = objG.leer("BD\\empresa.dbs\\columnas");
-//            for (int i = 0; i < list.size(); i++) {
-//                System.out.println(list.get(i));
-//            }
-//            System.out.println("------------------------------------------------------------------");
-//        } catch (Exception e) {
-//        }
-
         String[] parts, columnas = null, tabla, valores;
         String[][] ordenColumnas;
         String columnasaux, nomtab, aux;
         List<String> tablas;
         int tabid, nCols = 0;
+
         error.chBdActiva("chInsert");
         if (error.getDslerr() != 0) {
             return false;
@@ -651,7 +636,11 @@ public class Automatas {
             tabla = tabla[0].split(" "); //la tabla o nombtab se quedo en la posicion 0
             columnas = columnas[0].split(" \\( ");
             columnas = columnas[1].split(" \\)");
-            columnas = columnas[0].split(" "); //obtengo las columnas ya separadas
+
+            if (columnas[0].contains(",")) {
+                columnas = columnas[0].split(", "); //obtengo las columnas ya separadas
+            }
+
         }
         nomtab = tabla[0]; //obtengo el nombre de la tabla
         tabid = error.chTablaExiste("insert", nomtab);  //verifico si la tabla existe y guardo el id de la tabla
@@ -735,14 +724,22 @@ public class Automatas {
         }
 
         //checa variables difusas
-        for (int i = 0; i < ordenColumnas.length; i++) {
-            if (!ordenColumnas[i][2].equals("null")) {
-                if (!ordenColumnas[i][2].contains("'")) { // no tiene comillas simples
-                    if (ordenColumnas[i][2].contains("<")) { // contiene <...>
-                        if (!FFT) { //No se a verificado que la tabla sea difusa
-                            if (FFT = error.chTablaDifusa((tabid - 501))) { //Se checa que la tabla sea difuca
-                                if (error.chColumnaDifusa(Integer.parseInt(ordenColumnas[i][0]) - 1)) { //Verifica que la columna sea difusa...
-                                    if (!error.chVariableLinguistica(nomtab + "." + ordenColumnas[i][1], ordenColumnas[i][2].split("<")[1].split(">")[0])) { //Verifica que la variable linguistica exista
+        for (String[] ordenColumna : ordenColumnas) {
+
+            if (!ordenColumna[2].equals("null")) {
+
+                if (!ordenColumna[2].contains("'")) {
+                    // no tiene comillas simples
+                    if (ordenColumna[2].contains("<")) {
+                        // contiene <...>
+                        if (!FFT) {
+                            //No se a verificado que la tabla sea difusa
+                            if (FFT = error.chTablaDifusa((tabid - 501))) {
+                                //Se checa que la tabla sea difuca
+                                if (error.chColumnaDifusa(Integer.parseInt(ordenColumna[0]) - 1)) {
+                                    //Verifica que la columna sea difusa...
+                                    if (!error.chVariableLinguistica(nomtab + "." + ordenColumna[1], ordenColumna[2].split("<")[1].split(">")[0])) {
+                                        //Verifica que la variable linguistica exista
                                         System.out.println("No se puede insertar una etiqueta lingüistica no existente en la variable difusa de la columna");
                                         return false;
                                     }
@@ -764,7 +761,9 @@ public class Automatas {
 
         for (int i = 0; i < ordenColumnas.length; i++) {
             if (!ordenColumnas[i][2].equals("null")) {
-                error.chComparaTipoColumnas("chInsert", tabid, Integer.parseInt(ordenColumnas[i][0]), valores[i]);
+                if (!error.chComparaTipoColumnas("chInsert", tabid, Integer.parseInt(ordenColumnas[i][0]), valores[i])) {
+                    return false;
+                }
             }
             if (error.getDslerr() != 0) {
                 return false;
@@ -903,7 +902,7 @@ public class Automatas {
         }
     }
 
-    private Tabla obtener_tabla_resultante(String tablas[], int posicion, Tabla objTresultante){
+    private Tabla obtener_tabla_resultante(String tablas[], int posicion, Tabla objTresultante) {
         String parts[]; // para manupular o dividir el contenido del arreglo tablas
         String aux; //guarada la separacion de tabla.columna de que tiene parts en la posicion 2
         String parts_aux2[]; //guarada la separacion de tabla.columna de que tiene parts en la posicion 4
@@ -914,78 +913,77 @@ public class Automatas {
         Registro objR_nueva = new Registro();
         Tabla objT_anterior, objT_nueva;
         boolean bandera = false; //La bandera es para sabaer si el registro se pudo relacionar con todas las tablas indicadas, si si para guardar el registro en objTresultante y si no para no guardarla...
-        
-        
+
         //Trabajo desde los registros de la primera tabla... por eso pregunto si ahi mas registros que utilizar si no se sale de la recursividad...
-        if(posicion >= Lregistros.get(0).getRegistro().size()) //pregunto si 
+        if (posicion >= Lregistros.get(0).getRegistro().size()) //pregunto si 
+        {
             return null;
-        
+        }
+
         objT_anterior = Lregistros.get(0);
         objR_anterior = objT_anterior.getRegistro().get(posicion);  //obtengo el registro a trabajar o tratar
-        
+
         for (int i = 0; i < objR_anterior.getList_columnas().size(); i++) {//Recorro todas las columnas para ponerles el nombre de la tabla a las que pertenecen...
-            objR_anterior.getList_columnas().get(i).setNomColS(objT_anterior.getNombtab() + "." +  objR_anterior.getList_columnas().get(i).getNomcol());  //Le asigno el nombre a la columna para saber a que tabla pertenece
+            objR_anterior.getList_columnas().get(i).setNomtab(objT_anterior.getNombtab() + "." + objR_anterior.getList_columnas().get(i).getNomcol());  //Le asigno el nombre a la columna para saber a que tabla pertenece
         }
-        
+
         objR = objR_anterior;
-        
+
         for (int i = 1; i < Lregistros.size(); i++) { //Recorro todas las tablas...
             objT_nueva = Lregistros.get(i);  //Obtengo la i_esima tabla...
             parts = tablas[i].split(" ");    //obtengo la informacion de la nueva tabla a seleccionara que se mando en el query junto con la informacion del "on"...
-            
+
             for (int j = 0; j < objT_nueva.getRegistro().size(); j++) { //Recorro todos los registros
                 objR_nueva = objT_nueva.getRegistro().get(j);   //obtengo el jota_esimo registro
                 aux = parts[4]; //obtengo la columna de la tabla anterior con la que se indica la relacion (on)...
-                
+
                 for (int k = 0; k < objR_anterior.getList_columnas().size(); k++) { //recorro todas las columnas del objeto registro anterior
-                    if(objR_anterior.getList_columnas().get(k).getNomColS().trim().equals(aux.trim())){ //compara los nombres de las columnas
+                    if (objR_anterior.getList_columnas().get(k).getNomtab().trim().equals(aux.trim())) { //compara los nombres de las columnas
                         aux = parts[2]; //obtengo la columna de la tabla tabla con la que se indica la relacion (on)...
-                        
+
                         for (int l = 0; l < objR_nueva.getList_columnas().size(); l++) { //Recorro todas las columnas que tiene el registro nuevo
-                            if(obtenerNombresColumnas(objR_nueva.getList_columnas().get(l).getNomcol()).equals(aux.split(".")[1].trim())){ //compara el nombre de la columna seleccionada para la relacion en el on con la columna seleccionada del objeto objR_nueva
-                                if(objR_anterior.getList_columnas().get(k).getContenido().trim().equals(objR_nueva.getList_columnas().get(l).getContenido().trim())){ //Pregunta si los contenidos de als columnas con las que se hace la relacion entre tablas es el mismo (PERDON SI NO SOY BUENO REDACTANDO LOS COMENTARIOS :'( (Soy pesimo con las palabras y la redaccion  jaja ok ya) )
+                            if (obtenerNombresColumnas(objR_nueva.getList_columnas().get(l).getNomcol()).equals(aux.split(".")[1].trim())) { //compara el nombre de la columna seleccionada para la relacion en el on con la columna seleccionada del objeto objR_nueva
+                                if (objR_anterior.getList_columnas().get(k).getContenido().trim().equals(objR_nueva.getList_columnas().get(l).getContenido().trim())) { //Pregunta si los contenidos de als columnas con las que se hace la relacion entre tablas es el mismo (PERDON SI NO SOY BUENO REDACTANDO LOS COMENTARIOS :'( (Soy pesimo con las palabras y la redaccion  jaja ok ya) )
                                     bandera = true; //Se pone en true la bandera ya que si se pudo relaciona el registro conla tabla nueva...
                                     for (int m = 0; m < objR_nueva.getList_columnas().size(); m++) {//Recorro todas las columnas para ponerles el nombre de la tabla a las que pertenecen...
-                                        objR_nueva.getList_columnas().get(m).setNomColS(objT_nueva.getNombtab() + "." +  objR_nueva.getList_columnas().get(i).getNomcol());  //Le asigno el nombre a la columna para saber a que tabla pertenece
+                                        objR_nueva.getList_columnas().get(m).setNomtab(objT_nueva.getNombtab() + "." + objR_nueva.getList_columnas().get(i).getNomcol());  //Le asigno el nombre a la columna para saber a que tabla pertenece
                                         objR.getList_columnas().add(objR_nueva.getList_columnas().get(m)); //Agrega las nueva columnas de la nueva tabla relacionada al objeto registro (objR)
                                     }
                                 }
                             }
-                        }           
+                        }
                     }
                 }
             }
-            if(!bandera){ //para saber si se pudo relacionar el registro con la siguiente tabla si la bandera es false quiere decir que no se relaciono
-                i=Lregistros.size(); // para salir del siclo
+            if (!bandera) { //para saber si se pudo relacionar el registro con la siguiente tabla si la bandera es false quiere decir que no se relaciono
+                i = Lregistros.size(); // para salir del siclo
                 objTresultante = obtener_tabla_resultante(tablas, (posicion + 1), objTresultante); //ya no tiene chiste verificar las demas tablas por que ya no hara ninguna relacion...
-            }
-            else{
+            } else {
                 objT_anterior = objT_nueva;
                 objR_anterior = objR_nueva;
-                
-                if(i == (Lregistros.size() - 1) ){
+
+                if (i == (Lregistros.size() - 1)) {
                     objTresultante.getRegistro().add(objR);
                     objTresultante = obtener_tabla_resultante(tablas, (posicion + 1), objTresultante);
-                }
-                else
+                } else {
                     bandera = false;
+                }
             }
         }
-        
-        
+
         return objTresultante;
     }
-    
-    private String obtenerNombresColumnas(char NomCol[]){
-        String nombre="";
+
+    private String obtenerNombresColumnas(char NomCol[]) {
+        String nombre = "";
 
         for (int i = 0; i < NomCol.length; i++) {
-            nombre += NomCol[i]+"";
+            nombre += NomCol[i] + "";
         }
 
         return nombre;
     }
-    
+
     private void obtener_todos_registros(String tablas[], int posicion) {
         Registro objR;
         Tabla objT;
