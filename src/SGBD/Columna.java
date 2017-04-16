@@ -15,7 +15,16 @@ public class Columna {
     private int colref;
 
     private String contenido;
+    private String NomColS;
 
+    public String getNomColS() {
+        return NomColS;
+    }
+
+    public void setNomColS(String NomColS) {
+        this.NomColS = NomColS;
+    }
+    
     public String getContenido() {
         return contenido;
     }
