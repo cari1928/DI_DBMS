@@ -19,9 +19,11 @@ public class Automatas {
     private String RUTA;
     private String query;
     private boolean varEntrada;
-    private List<String> Lcondiciones = new ArrayList<>();
-    private List<select> Lregistros = new ArrayList<>();
-    private List<select> LseleccionadosCondicion = new ArrayList<>();
+
+    //PARA EL SELECT
+    private List<String> Lcondiciones; //guarda condiciones y operadores lógicos
+    private List<Tabla> Lregistros; //guarda todos los registros de todas las tablas
+    private List<Tabla> LselecCond; //guarda la info de los registros que cumplen todas las condiciones
 
     /**
      *
@@ -67,15 +69,15 @@ public class Automatas {
         } else if (chCrearTabla()) {
             varEntrada = true;
             return true;
-        } else if (chInsert()) {
-            return true;
         } else if (chCrearIndice()) {
             return true;
         } else if (chCrearReferencia()) {
             return true;
-        } else if (chUpdate()) {
-            return true;
         } else if (chSelect()) {
+            return true;
+        } else if (chInsert()) {
+            return true;
+        } else if (chUpdate()) {
             return true;
         } else if (chShowDBFiles()) {
             return true;
@@ -258,7 +260,7 @@ public class Automatas {
         registro += parts.length + " ";
         registro += 0 + " ";
         registro += 0 + " ";
-        registro += type + " ";
+        registro += type;
         objG.escribir("BD\\" + objBD.getNombre() + ".dbs\\tablas", n + 1, registro, "final");
         return parts;
     }
@@ -616,14 +618,14 @@ public class Automatas {
 
     //TODO, FALTA VERIFICAR LA REFERENCIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     private boolean chInsert() {
-        try {
-            List<String> list = objG.leer("BD\\empresa.dbs\\columnas");
-            for (int i = 0; i < list.size(); i++) {
-                System.out.println(list.get(i));
-            }
-            System.out.println("------------------------------------------------------------------");
-        } catch (Exception e) {
-        }
+//        try {
+//            List<String> list = objG.leer("BD\\empresa.dbs\\columnas");
+//            for (int i = 0; i < list.size(); i++) {
+//                System.out.println(list.get(i));
+//            }
+//            System.out.println("------------------------------------------------------------------");
+//        } catch (Exception e) {
+//        }
 
         String[] parts, columnas = null, tabla, valores;
         String[][] ordenColumnas;
@@ -800,60 +802,72 @@ public class Automatas {
         }
 
         query = query.toLowerCase();
-        Lcondiciones = new ArrayList<>();
-        Lregistros = new ArrayList<>();
+
+        Lcondiciones = new ArrayList<>(); //guarda las condiciones y sus operadores lógicos
+        Lregistros = new ArrayList<>(); //guarda la info de todas las tablas
+
         if (!query.contains("select")) {
             return false;
         }
 
         if (!query.contains("*")) {
+            //llena arreglo columnas
             parts = query.split("select ")[0].split(" from"); //obtengo las columnas que se desean seleccionar
             if (parts[0].contains(", ")) {
                 //Tiene varias columnas seleccionadas...
                 columnas = parts[0].split(", ");
             } else {
                 //Tiene solo una columna seleccionada...
-                columnas = new String[1];
-                columnas[0] = parts[0];
+                columnas = new String[]{parts[0]};
             }
-        } //Si no se indico ninguna columna la variable columnas estara en null.
+        }
+        //Si no se indico ninguna columna la variable columnas estara en null.
         parts = query.split(" from ");
         parts[0] = parts[1];
         if (parts[0].contains(" where ")) {
-            parts = parts[0].split(" where ");
+            parts = parts[0].split(" where "); //quita el where
         }
         if (parts[0].contains(" inner join ")) {
             //Tienen varias tablas a las que se hace referencia...
+            //llena arreglo tablas
             tablas = parts[0].split(" inner join ");
         } else {
             //Tiene solo una tabla a la que se hace referencia
-            tablas = new String[1];
-            tablas[0] = parts[0];
+            tablas = new String[]{parts[0]};
         }
 
+        //regresa todos los registros de las tablas fuera del where
+        //Lregistros es llenado
         obtener_todos_registros(tablas, 0);
 
         if (query.contains(" where ")) { // Si hay condiciones...
-            LseleccionadosCondicion = new ArrayList<>();
+            LselecCond = new ArrayList<>(); //guarda las condiciones a mostrar al usuario
             tratado_condiciones(query.split(" where ")[1]); //Gurda todas las condiciones que tiene en una lista de String la forma en como guarda es condicion y operafor logico la siguiente condicion asi sucesivamente
 
         } else {
-            imprimeResultado(columnas, Lregistros);
+            imprimeResultado(columnas, tablas);
         }
 
         return true;
     }
 
-    private void imprimeResultado(String[] columnas, List<select> Lregistros) {
+    private void imprimeResultado(String[] columnas, String[] tablas) {
         String resultado = "| ";
+        Tabla objT;
+        List<Columna> listC;
+
         if (columnas == null) {
             for (int i = 0; i < Lregistros.size(); i++) {
-                for (int j = 0; j < Lregistros.get(i).registro.size(); j++) {
-                    for (int k = 0; k < Lregistros.get(i).registro.get(j).columnas_list.size(); k++) {
-                        if (k == (Lregistros.get(i).registro.get(j).columnas_list.size() - 1)) {
-                            resultado += Lregistros.get(i).registro.get(j).columnas_list.get(k).contenido;
+                objT = Lregistros.get(i);
+
+                for (int j = 0; j < objT.getRegistro().size(); j++) {
+                    listC = objT.getRegistro().get(j).getList_columnas();
+
+                    for (int k = 0; k < listC.size(); k++) {
+                        if (k == (listC.size() - 1)) {
+                            resultado += listC.get(k).getContenido();
                         } else {
-                            resultado += Lregistros.get(i).registro.get(j).columnas_list.get(k).contenido + " | ";
+                            resultado += listC.get(k).getContenido() + " | ";
                         }
                     }
                     System.out.println(resultado);
@@ -862,14 +876,20 @@ public class Automatas {
             }
         } else {
             for (int i = 0; i < columnas.length; i++) {
+
                 for (int j = 0; j < Lregistros.size(); j++) {
-                    if (Lregistros.get(j).tabla.equals(columnas[i].split(".")[0])) {
-                        for (int k = 0; k < Lregistros.get(j).registro.size(); k++) {
-                            for (int l = 0; l < Lregistros.get(j).registro.get(k).columnas_list.size(); l++) {
-                                if (l == (Lregistros.get(j).registro.get(k).columnas_list.size() - 1)) {
-                                    resultado += Lregistros.get(j).registro.get(k).columnas_list.get(l).contenido;
+                    objT = Lregistros.get(j);
+
+                    if (objT.getNombtab().equals(columnas[i].split(".")[0])) {
+
+                        for (int k = 0; k < objT.getRegistro().size(); k++) {
+                            listC = objT.getRegistro().get(k).getList_columnas();
+
+                            for (int l = 0; l < listC.size(); l++) {
+                                if (l == (listC.size() - 1)) {
+                                    resultado += listC.get(l).getContenido();
                                 } else {
-                                    resultado += Lregistros.get(j).registro.get(k).columnas_list.get(l).contenido + " | ";
+                                    resultado += listC.get(l).getContenido() + " | ";
                                 }
                             }
                             System.out.println(resultado);
@@ -882,51 +902,61 @@ public class Automatas {
     }
 
     private void obtener_todos_registros(String tablas[], int posicion) {
+        Registro objR;
+        Tabla objT;
+        Columna objC; //se crea un objeto de la clase columnas
+        String[] parts, parts2, parts4;
+        List<Columna> list_columnas;
+        List<String> tables, columns, registros;
+
         if (posicion < tablas.length) {
             try {
-                String parts[] = tablas[posicion].split(" ");
-                //Obtiene tabla
-                select objS = new select();;
-                List<String> tables = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\tablas");
-                List<String> columns = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\columnas");
-                List<String> registros = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\" + objS.tabla + ".dat");
+                objT = new Tabla();
+                parts = tablas[posicion].split(" "); //Obtiene tabla
+                tables = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\tablas");
+                columns = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\columnas");
+                registros = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\" + parts[0] + ".dat");
 
                 for (int i = 0; i < tables.size(); i++) {
-                    String parts2[] = tables.get(i).split(" "); //se divide la informacion de cada registro de archivo tablas
+                    parts2 = tables.get(i).split(" "); //se divide la informacion de cada registro de archivo tablas
+
                     if (parts2[0].equals(parts[0])) { //se compara los nombres de l tabla
-                        objS.tabla = parts2[0]; //se obtiene el nombre de la tabla
-                        objS.id = Integer.parseInt(parts2[2]); //se obtiene el id de la tabla
+                        objT.setNombtab(parts2[0]); //se obtiene el nombre de la tabla
+                        objT.setTabid(Integer.parseInt(parts2[1]));
                         i = tables.size(); //i se iguala al tamaño de la lista tables para que salga del for
-                        columnas objC; //se crea un objeto de la clase columnas
-                        List<columnas> columnas_list = new ArrayList<>(); //se crea una lista de la clase columnas
+
+                        list_columnas = new ArrayList<>();
                         for (int k = 0; k < columns.size(); k++) { // se recorren todas las columnas
-                            String parts4[] = columns.get(k).split(" "); //se dividen la informacion de cada registro del archivo columnas
-                            if (Integer.parseInt(parts4[0]) == objS.id) { //preguntamos si el id de la tabla coincide con las columnas.
-                                objC = new columnas();                  //creamos el objeto columnas.
-                                objC.id = Integer.parseInt(parts4[1]);  //colocamos el id de la columna.
-                                objC.nombre = parts4[2];                //colocamos el nombre de la columna.
-                                columnas_list.add(objC);                //Agregamos la columna a la lista columnas.
+                            parts4 = columns.get(k).split(" "); //se dividen la informacion de cada registro del archivo columnas
+                            if (Integer.parseInt(parts4[2]) == objT.getTabid()) { //preguntamos si el id de la tabla coincide con las columnas.
+                                objC = new Columna(); //creamos el objeto columnas.
+                                objC.setColid(Integer.parseInt(parts4[3]));  //colocamos el id de la columna.
+                                objC.setNomcol(getChars(parts4[4], 10)); //colocamos el nombre de la columna.
+                                list_columnas.add(objC); //Agregamos la columna a la lista columnas.
                             }
                         }
-                        registro objR;
+
                         for (int j = 0; j < registros.size(); j++) {
-                            objR = new registro();
-                            objR.columnas_list = columnas_list;
+                            objR = new Registro();
+                            objR.setList_columnas(list_columnas);
                             String parts3[] = registros.get(j).split(" ");
                             for (int l = 0; l < parts3.length; l++) {
-                                objR.columnas_list.get(i).contenido = parts3[i];
+                                objR.getList_columnas().get(l).setContenido(parts3[l]);
                             }
-                            objS.registro.add(objR);
+                            objT.getRegistro().add(objR); //agrega el registro a la tabla
                         }
+                        Lregistros.add(objT); //guarda la tabla con todos los registros
                     }
                 }
-                Lregistros.add(objS);
+
                 obtener_todos_registros(tablas, (posicion + 1));
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
+    //llena Lcondiciones con condiciones y operadores lógicos
     private void tratado_condiciones(String condiciones) {
         int and = condiciones.indexOf(" and "), or = condiciones.indexOf(" or ");
         if (and == -1 && or == -1) {
@@ -975,7 +1005,20 @@ public class Automatas {
         return null; //retorna registros
     }
 
-    private String[] chCondicionDifusa(String condicion) {
+    // ANTES DE USAR ESTE MÉTODO, DEBE USARSE: error.chCondDifusa
+    //si ése método regresa false, la escritura de dicha condición es errónea
+    //si regresa true, ya se puede usar este método
+    /*
+    * String columna equivale al nombre de la variable linguistica
+     */
+    private Tabla chCondicionDifusa(String condicion) {
+        String[] parts = condicion.split(" ");
+
+        if (parts[2].contains("$")) {
+            //se hará el proceso en base a una etiqueta linguística
+
+        }
+
         return null; //retorna registros
     }
 
@@ -1164,10 +1207,10 @@ public class Automatas {
         GestionArchivos objGsed = new GestionArchivos();
         List<String> regDatos, regFiles;
         try {
-            regDatos = objGsed.leer("SED/Datos");
+            regDatos = objGsed.leer(RUTA + "\\SED\\Datos");
             for (String regDato : regDatos) {
                 //System.out.println("SED/" + regDato);
-                regFiles = objGsed.leer(("SED/" + regDato).trim());
+                regFiles = objGsed.leer((RUTA + "SED\\" + regDato).trim());
 
                 System.out.println("ARCHIVO " + regDato);
                 for (String regFile : regFiles) {
@@ -1177,24 +1220,6 @@ public class Automatas {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public class select {
-
-        List<registro> registro = new ArrayList<>();
-        String tabla;
-        int id;
-    }
-
-    public class registro {
-
-        List<columnas> columnas_list = new ArrayList<>();
-    }
-
-    public class columnas {
-
-        String nombre, contenido;
-        int id;
     }
 
 }

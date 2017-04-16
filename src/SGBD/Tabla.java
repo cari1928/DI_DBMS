@@ -12,17 +12,29 @@ public class Tabla {
     private List<Columna> listColumnas;
     private List<Indice> listIndices;
     private List<String> columnas;
-    private String nombtab;
+    private String nombtab; //nombre
     private String archivo;
-    private int tabid;
+    private int tabid; //id
     private int tamreng;
     private int ncols;
     private double nrengs;
     private int nindex;
+    
+    private List<Registro> registro = new ArrayList<>();
 
     public Tabla() {
         columnas = new ArrayList<>();
     }
+
+    public List<Registro> getRegistro() {
+        return registro;
+    }
+
+    public void setRegistro(List<Registro> registro) {
+        this.registro = registro;
+    }
+    
+    
 
     public List<Columna> getListColumnas() {
         return listColumnas;

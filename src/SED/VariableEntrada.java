@@ -181,7 +181,8 @@ public class VariableEntrada {
             }
             if (!flag) {
                 ++countShape;
-                opt = askStringData("PRESIONE 0 PARA TERMINAR: ");
+                opt = askStringData("PRESIONE CUALQUIER TECLA PARA AGREGAR OTRA ETIQUETA Ó"
+                        + "\nPRESIONE 0 PARA TERMINAR: ");
             }
         } while (flag || !opt.equals("0"));
     }

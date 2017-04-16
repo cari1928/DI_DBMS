@@ -7,12 +7,22 @@ package SGBD;
 public class Columna {
 
     private int tabid;
-    private int colid;
-    private char[] nomcol = new char[10];
+    private int colid; //id
+    private char[] nomcol = new char[10]; //nombre
     private char coltipo;
     private int coltam;
     private int tabref;
     private int colref;
+
+    private String contenido;
+
+    public String getContenido() {
+        return contenido;
+    }
+
+    public void setContenido(String contenido) {
+        this.contenido = contenido;
+    }
 
     public int getTabid() {
         return tabid;

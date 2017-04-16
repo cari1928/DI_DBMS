@@ -58,7 +58,7 @@ public class Errores {
         try {
             String tabla = objG.obtenerRegistroByID(RUTABD + "tablas", idtabla);
             String parts[] = tabla.split(" ");
-            if (!parts[(parts.length - 2)].equals("f")) {
+            if (!parts[(parts.length - 1)].trim().equals("f")) {
                 return false;
             }
         } catch (IOException ex) {
@@ -83,7 +83,7 @@ public class Errores {
     public boolean chVariableLinguistica(String archivo, String etiqueta) {
         String parts[];
         try {
-            List<String> etiquetas = objG.leer("SED\\" + archivo);
+            List<String> etiquetas = objG.leer(RUTABD + "\\SED\\" + archivo);
             for (int i = 0; i < etiquetas.size(); i++) {
                 parts = etiquetas.get(i).split(" ");
                 if (parts[3].equals(etiqueta)) {
@@ -414,4 +414,64 @@ public class Errores {
         }
         return null;
     }
+
+    //ejemplo de condición
+    //columna FEQ $Joven
+    //columna FEQ $Joven THOLD 0.6
+    //columna FGEQ #20 
+    //columna FGEQ #20 THOLD 0.2
+    public boolean chCondDifusa(String condicion) {
+        String[] parts = condicion.split(" "), parts2;
+
+        //NO TIENE LA ESTRUCTURA BÁSICA
+        if (parts.length != 3 && parts.length != 5) {
+            return false; //la estructura de la condición es incorrecta
+        }
+
+        //NO TIENE LAS PALABRAS RESERVADAS
+        if (!parts[1].equals("FGEQ") // >=
+                && !parts[1].equals("FLEQ") //<=
+                && !parts[1].equals("FEQ")) {//==
+            return false;
+        }
+
+        //NO TIENE # O $
+        if (!parts[2].contains("#") && !parts[2].contains("$")) {
+            return false;
+        }
+
+        //verifica que, si tiene #, éste venga acompañado de un número
+        try {
+            if (parts[2].contains("#")) {
+                parts2 = parts[2].split("#");
+                Double.parseDouble(parts2[1]); //solo es para comprobar
+            } else {
+                //verificar que la etiqueta sea válida para la tabla seleccionada
+                parts2 = parts[2].split("$");
+                chVariableLinguistica(objBD.getNombre() + "." + parts[0], parts2[1]);
+                if (dslerr != 0) {
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            return false; //no es número
+        }
+
+        //NO TIENE LA PALABRA RESERVADA THOLD
+        if (parts.length == 5) {
+            if (!parts[3].equalsIgnoreCase("THOLD")) {
+                return false;
+            }
+
+            //verifica que los grados de membresía tengan un valor numérico
+            try {
+                Double.parseDouble(parts[4]); //solo es para comprobar
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 }
