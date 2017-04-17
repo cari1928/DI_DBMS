@@ -8,14 +8,14 @@ public class Columna {
 
     private int tabid;
     private int colid; //id
-    private char[] nomcol = new char[10]; //nombre columna
+    private char[] nomcol = new char[10]; //nombre
     private char coltipo;
     private int coltam;
     private int tabref;
     private int colref;
 
     private String contenido;
-    private String nomtab; //nombre tabla
+    private String nomtab;
 
     public String getNomtab() {
         return nomtab;

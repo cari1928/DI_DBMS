@@ -1,4 +1,4 @@
-package GestionSistema;
+package Archivos;
 
 import SED.*;
 import java.io.File;
@@ -151,8 +151,8 @@ public class GestionArchivos {
             System.out.println("CARPETA " + ruta + " CREADA CORRECTAMENTE");
         }
 
-        if (!ruta.contains("SED") && ruta.contains(".dbs")) {
-            crearArchivo(ruta + "\\tablas");    
+        if (ruta.contains(".dbs")) {
+            crearArchivo(ruta + "\\tablas");
             crearArchivo(ruta + "\\columnas");
             crearArchivo(ruta + "\\indices");
             System.out.println("JERARQUÍA DE ARCHIVOS CREADA CON ÉXITO");

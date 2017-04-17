@@ -2,7 +2,7 @@ package SED;
 
 import java.io.IOException;
 import java.util.Scanner;
-import GestionSistema.GestionArchivos;
+import Archivos.GestionArchivos;
 import SGBD.Automatas;
 
 /**
@@ -11,11 +11,11 @@ import SGBD.Automatas;
  */
 public class VariableEntrada {
 
-    private String query;
-    private UniversoDiscurso objU;
-    private Scanner teclado;
-    private GestionArchivos objG;
-    private Automatas objA;
+    private final String query;
+    private final UniversoDiscurso objU;
+    private final Scanner teclado;
+    private final GestionArchivos objG;
+    private final Automatas objA;
     private double aux;
     private int countShape;
     private Trapezoide objT;
@@ -48,44 +48,23 @@ public class VariableEntrada {
 
             if (parts2[1].equals("f")) {
                 objG.crearDirectorio(objA.getRUTA() + "SED");//crea el directorio SED si no existe
-                askDiscourseUniverse(null); //pide datos del universo de discurso y escribe en archivos
+                askDiscourseUniverse(); //pide datos del universo de discurso y escribe en archivos
                 createTrapezoids();
             }
         }
     }
 
-    /**
-     * Usado desde la clase Automatas y esta misma clase
-     *
-     * @param registro puede ser null o puede tener el contenido: "origen fin
-     * unidades variable"
-     * @throws IOException
-     */
-    public void askDiscourseUniverse(String registro) throws IOException {
-        boolean flag;
-        String ruta = objA.getRUTA() + "/SED/";
-        String[] parts;
+    private void askDiscourseUniverse() throws IOException {
+        String registro, ruta = objA.getRUTA() + "SED/";
 
-        if (registro == null) { //si el registro está vacío, comienza a llenarse
-            registro = getRange(); //pide el rango de origen - fin del universo de discurso
-            registro += " " + getUnits(); //pide las unidades 
-            registro += " " + objU.getVariable();
-            flag = true;
-        } else {//registro no es null entonces no está vacío
-            parts = registro.split(" ");
-            objU.setOrigen(Double.parseDouble(parts[0]));
-            objU.setFin(Double.parseDouble(parts[1]));
-            flag = false;
-        }
+        registro = getRange(); //pide el rango de origen - fin del universo de discurso
+        registro += " " + getUnits(); //pide las unidades 
+        registro += " " + objU.getVariable();
 
         //crea el archivo con el nombre de la objU.getVariable()
-        objG.escribir(ruta + objU.getTable() + "." + objU.getVariable() + ".tmp", 1, registro, "nuevo");
-
-        if (flag) {
-            //guarda el nombre de la objU.getVariable() en el archivo Datos
-            objG.escribir(ruta + "Datos", 1, objU.getTable() + "." + objU.getVariable(), "final");
-        }
-
+        objG.escribir(ruta + objU.getTable() + "." + objU.getVariable(), 1, registro, "nuevo");
+        //guarda el nombre de la objU.getVariable() en el archivo Datos
+        objG.escribir(ruta + "Datos", 1, objU.getTable() + "." + objU.getVariable(), "final");
     }
 
     private String getUnits() {
@@ -208,45 +187,6 @@ public class VariableEntrada {
         } while (flag || !opt.equals("0"));
     }
 
-    public void createTrapezoids(String puntosC, String op, String ruta) throws IOException {
-        String[] parts = puntosC.split(" ");
-        boolean flag = fullTrapezoid(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
-        String registro, orientacion;
-
-        if (!flag) {
-            objT.setEtiqueta(op);
-            registro = "Trapezoide " + parts[0] + " " + parts[1] + " "
-                    + objT.getEtiqueta() + " " + objU.getOrigen() + " 0";
-            objG.escribir(ruta, 1, registro, "final");
-
-            objT.setAux(aux);
-            objT.setOrigen(objU.getOrigen());
-            objT.setFin(objU.getFin());
-            objU.setOrigen(objT.calculaTraslape());
-        } else {
-            if (op.equals("FLEQ")) {
-                flag = halfLeftTrapezoid(Double.parseDouble(parts[0])); //verifica aspectos de un trapezoide a la izquierda
-                orientacion = "i";
-            } else {
-                //fgeq
-                flag = halfRightTrapezoid(Double.parseDouble(parts[0])); //verifica aspectos de un trapezoide a la derecha
-                orientacion = "d";
-            }
-
-            if (!flag) {
-                objSemiT.setEtiqueta(op);
-                registro = "SemiTrapezoide " + parts[0] + " " + orientacion + " "
-                        + objSemiT.getEtiqueta() + " " + objU.getOrigen() + " 0";
-                objG.escribir(ruta, 1, registro, "final");
-
-                objSemiT.setAux(aux);
-                objSemiT.setOrigen(objU.getOrigen());
-                objSemiT.setFin(objU.getFin());
-                objU.setOrigen(objSemiT.calculaTraslape());
-            }
-        }
-    }
-
     /**
      * Verifica que los puntos c1 y c2 estén dentro del universo de discurso.
      * También, si la función abarcará el resto del universo de discurso
@@ -261,7 +201,7 @@ public class VariableEntrada {
             return true;
         }
 
-        if (objU.getFin() < pc1 || pc1 < objU.getOrigen() || pc2 < objU.getOrigen() || pc2 > objU.getFin()) {
+        if (pc1 < objU.getOrigen() || pc1 > objU.getFin() || pc2 < objU.getOrigen() || pc2 > objU.getFin()) {
             System.out.println("Error, los puntos críticos no se encuentran dentro del Universo de Discurso disponible");
             return true;
 
@@ -319,14 +259,6 @@ public class VariableEntrada {
         }
 
         objSemiT.setPuntoC(new double[]{pc, 1});
-    }
-
-    public UniversoDiscurso getObjU() {
-        return objU;
-    }
-
-    public void setObjU(UniversoDiscurso objU) {
-        this.objU = objU;
     }
 
 }
