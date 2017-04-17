@@ -2,7 +2,9 @@ package SGBD;
 
 import java.io.IOException;
 import java.util.List;
-import Archivos.GestionArchivos;
+import GestionSistema.GestionArchivos;
+import GestionSistema.Sistema;
+import SED.VariableEntrada;
 import java.util.ArrayList;
 
 /**
@@ -662,6 +664,7 @@ public class Automatas {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+
         ordenColumnas = new String[nCols][3]; //tendra columnas de la tabla con id, nombre y valor a insertar
         if (columnas == null) { //preguntar si el usuario especifico las columnas en el insert si no se hace un arreglo con las columnas...
             try {
@@ -733,9 +736,9 @@ public class Automatas {
                     if (ordenColumna[2].contains("<")) {
                         // contiene <...>
                         if (!FFT) {
-                            //No se a verificado que la tabla sea difusa
+                            //No se ha verificado que la tabla sea difusa
                             if (FFT = error.chTablaDifusa((tabid - 501))) {
-                                //Se checa que la tabla sea difuca
+                                //Se checa que la tabla sea difusa
                                 if (error.chColumnaDifusa(Integer.parseInt(ordenColumna[0]) - 1)) {
                                     //Verifica que la columna sea difusa...
                                     if (!error.chVariableLinguistica(nomtab + "." + ordenColumna[1], ordenColumna[2].split("<")[1].split(">")[0])) {
@@ -834,6 +837,12 @@ public class Automatas {
         } else {
             //Tiene solo una tabla a la que se hace referencia
             tablas = new String[]{parts[0]};
+        }
+
+        try {
+            chCondicionDifusa("persona.edad fleq $joven");
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
 
         //regresa todos los registros de las tablas fuera del where
@@ -1092,10 +1101,26 @@ public class Automatas {
     //si ése método regresa false, la escritura de dicha condición es errónea
     //si regresa true, ya se puede usar este método
     /*
-    * String columna equivale al nombre de la variable linguistica
+     * String condicion NO debe contener la palabra where
+     * @return Tabla contiene los registros que cumplen con la condición
      */
-    private Tabla chCondicionDifusa(String condicion) {
-        String[] parts = condicion.split(" ");
+    public Tabla chCondicionDifusa(String condicion) throws IOException {
+        Sistema objS = new Sistema();
+        VariableEntrada objV = new VariableEntrada("", this);
+        String[] parts = condicion.split(" "), parts2;
+        String registro;
+
+        registro = objS.getUniverse(RUTA + "/SED/" + parts[0], parts[2]);
+        if (registro == null) {
+            return null;
+        }
+
+        //CREA TRAPECIO
+        objV.getObjU().setTable(parts[0].split("\\.")[0]);
+        objV.getObjU().setVariable(parts[0].split("\\.")[1]);
+        objV.askDiscourseUniverse(registro); //crea nueva variable, escribe origen, fin, unidades y variable8(tmp)
+        parts2 = registro.split(" ");
+        objV.createTrapezoids(parts2[0] + " " + parts2[1], parts[1], RUTA + "/SED/" + parts[0] + ".tmp");
 
         if (parts[2].contains("$")) {
             //se hará el proceso en base a una etiqueta linguística
@@ -1175,9 +1200,11 @@ public class Automatas {
         List<String> logic = new ArrayList<>();
         List<Boolean> results = new ArrayList<>();
         String[] whereElements, parts;
+        String whereE, fuzzyC = "";
         whereElements = where[1].split(" ");
 
-        for (String whereE : whereElements) { //recorre cada elemento del estatuto where
+        for (int i = 0; i < whereElements.length; i++) { //recorre cada elemento del estatuto where
+            whereE = whereElements[i];
 
             if (whereE.equals("and") || whereE.equals("or")) {
                 logic.add(whereE); //guarda los operadores
@@ -1193,10 +1220,10 @@ public class Automatas {
                     }
                     //TODO, modificar
                     //results.add(chCrispCondition(whereE));
-                } else {
+                } else if (whereE.contains(".")) {
                     //condición difusa
-                    //TODO, modificar
-                    //results.add(chFuzzyCondition(whereE));
+                    fuzzyC += whereE + " " + whereElements[i + 1] + " " + whereElements[i + 2];
+                    i += 2;
                 }
             }
         }
@@ -1274,7 +1301,7 @@ public class Automatas {
     }
 
     private boolean chShowSEDFiles() {
-        error.chBdActiva("crearTabla");
+        error.chBdActiva("showSedFiles");
         if (error.getDslerr() != 0) {
             return false;
         }
