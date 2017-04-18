@@ -3,7 +3,7 @@ package SGBD;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import Archivos.GestionArchivos;
+import GestionSistema.GestionArchivos;
 
 /**
  *
@@ -67,9 +67,9 @@ public class Errores {
         return true;
     }
 
-    public boolean chColumnaDifusa(int idtabla) {
+    public boolean chColumnaDifusa(int colid) {
         try {
-            String columna = objG.obtenerRegistroByID(RUTABD + "columnas", idtabla);
+            String columna = objG.obtenerRegistroByID(RUTABD + "columnas", colid);
             String parts[] = columna.split(" ");
             if (!parts[7].trim().equals("f")) {
                 return false;
@@ -232,7 +232,10 @@ public class Errores {
                                 return false;
                             }
 
-                        } else if (parts[0].contains("int")) {
+                        } else if (parts[0].contains("integer")) {
+                            if (colvalue.contains("<")) {
+                                return true;
+                            }
                             try {
                                 Integer.parseInt(colvalue);
                             } catch (Exception e) {
@@ -415,23 +418,67 @@ public class Errores {
         return null;
     }
 
+    /**
+     * Checa los elementos necesarios para que una condición difusa sea
+     * sintácticamente correcta.
+     *
+     * @param condicion persona.edad FEQ $joven --> ejemplo
+     * @return true-sintaxis correcta
+     */
     //ejemplo de condición
     //columna FEQ $Joven
     //columna FEQ $Joven THOLD 0.6
     //columna FGEQ #20 
     //columna FGEQ #20 THOLD 0.2
     public boolean chCondDifusa(String condicion) {
+        /*
+        //ejemplo de condición
+        //columna FEQ $Joven
+        //columna FEQ $Joven THOLD 0.6
+        //columna FGEQ #20 
+        //columna FGEQ #20 THOLD 0.2
+        Elementos a verificar:
+        1 En total deben ser entre 3 y 5 caracteres, ni más ni menos 
+        2 Sintaxis para cada columna de la forma: tabla.columna 
+        3 Existencia de la tabla 
+        4 La columna pertenece a esa tabla
+        5 La columna es difusa
+        6 Contiene alguna palabra reservada: {FEQ, FGEQ, FLEQ}
+        7 Contiene un $ o un #, $ seguido de letras y # seguido de números
+        8 Contiene la palabra reservada THOLD y seguido de él un número flotante
+         */
+
+        int tabid, colid;
+        String variableL;
         String[] parts = condicion.split(" "), parts2;
 
         //NO TIENE LA ESTRUCTURA BÁSICA
         if (parts.length != 3 && parts.length != 5) {
             return false; //la estructura de la condición es incorrecta
         }
+        
+        if (!parts[0].contains(".")) { //verifica que se cumpla la estructura tabla.columna
+            return false;
+        }
+
+        tabid = chTablaExiste("condicionDifusa", parts[0].split(".")[1]);  //verifica si la tabla existe y regresa el id de la tabla
+        if (dslerr != 0) {
+            return false;
+        }
+
+        colid = chColumnasExisten("condicionDifusa", parts[0].split(".")[1], tabid);
+        if (dslerr != 0) {
+            return false;
+        }
+
+        if (!chColumnaDifusa(colid)) { //verifica que la columna sea difusa
+            return false; //no es difusa
+        }
 
         //NO TIENE LAS PALABRAS RESERVADAS
         if (!parts[1].equals("FGEQ") // >=
-                && !parts[1].equals("FLEQ") //<=
-                && !parts[1].equals("FEQ")) {//==
+                && !parts[1].equals("FLEQ")) {//<=
+            //&& !parts[1].equals("FEQ")) {//==
             return false;
         }
 
@@ -448,8 +495,7 @@ public class Errores {
             } else {
                 //verificar que la etiqueta sea válida para la tabla seleccionada
                 parts2 = parts[2].split("$");
-                chVariableLinguistica(objBD.getNombre() + "." + parts[0], parts2[1]);
-                if (dslerr != 0) {
+                if (chVariableLinguistica(RUTABD + parts[0], parts2[1])) {
                     return false;
                 }
             }

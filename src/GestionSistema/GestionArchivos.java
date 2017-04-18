@@ -1,4 +1,4 @@
-package Archivos;
+package GestionSistema;
 
 import SED.*;
 import java.io.File;

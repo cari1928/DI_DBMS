@@ -2,7 +2,7 @@ package SED;
 
 import java.io.IOException;
 import java.util.Scanner;
-import Archivos.GestionArchivos;
+import GestionSistema.GestionArchivos;
 import SGBD.Automatas;
 
 /**
@@ -12,12 +12,12 @@ import SGBD.Automatas;
 public class VariableEntrada {
 
     private final String query;
-    private final UniversoDiscurso objU;
     private final Scanner teclado;
     private final GestionArchivos objG;
     private final Automatas objA;
     private double aux;
     private int countShape;
+    private UniversoDiscurso objU;
     private Trapezoide objT;
     private SemiTrapezoide objSemiT;
 
@@ -28,6 +28,14 @@ public class VariableEntrada {
         teclado = new Scanner(System.in);
         objU = new UniversoDiscurso();
         objG = new GestionArchivos();
+    }
+
+    public UniversoDiscurso getObjU() {
+        return objU;
+    }
+
+    public void setObjU(UniversoDiscurso objU) {
+        this.objU = objU;
     }
 
     public void init() throws IOException {
@@ -48,23 +56,58 @@ public class VariableEntrada {
 
             if (parts2[1].equals("f")) {
                 objG.crearDirectorio(objA.getRUTA() + "SED");//crea el directorio SED si no existe
-                askDiscourseUniverse(); //pide datos del universo de discurso y escribe en archivos
+                askDiscourseUniverse(null); //pide datos del universo de discurso y escribe en archivos
                 createTrapezoids();
             }
         }
     }
 
-    private void askDiscourseUniverse() throws IOException {
-        String registro, ruta = objA.getRUTA() + "SED/";
+    /**
+     * Usado desde la clase Automatas y esta misma clase
+     *
+     * @param registro puede ser null o puede tener el contenido: "origen fin
+     * unidades variable"
+     * @throws IOException
+     */
+    public void askDiscourseUniverse(String registro) throws IOException {
+        boolean flag;
+        String ruta = objA.getRUTA() + "/SED/";
+        String[] parts;
 
-        registro = getRange(); //pide el rango de origen - fin del universo de discurso
-        registro += " " + getUnits(); //pide las unidades 
-        registro += " " + objU.getVariable();
+        if (registro == null) { //si el registro está vacío, comienza a llenarse
+            registro = getRange(); //pide el rango de origen - fin del universo de discurso
+            registro += " " + getUnits(); //pide las unidades 
+            registro += " " + objU.getVariable();
+            flag = true;
+        } else {//registro no es null entonces no está vacío
+            parts = registro.split(" ");
+            objU.setOrigen(Double.parseDouble(parts[0]));
+            objU.setFin(Double.parseDouble(parts[1]));
+            flag = false;
+        }
 
         //crea el archivo con el nombre de la objU.getVariable()
-        objG.escribir(ruta + objU.getTable() + "." + objU.getVariable(), 1, registro, "nuevo");
-        //guarda el nombre de la objU.getVariable() en el archivo Datos
-        objG.escribir(ruta + "Datos", 1, objU.getTable() + "." + objU.getVariable(), "final");
+        objG.escribir(ruta + objU.getTable() + "." + objU.getVariable() + ".tmp", 1, registro, "nuevo");
+
+        if (flag) {
+            //guarda el nombre de la objU.getVariable() en el archivo Datos
+            objG.escribir(ruta + "Datos", 1, objU.getTable() + "." + objU.getVariable(), "final");
+        }
+    }
+
+    public void createTrapezoids(String puntosC, String op, String ruta) throws IOException {
+        String[] partsPoints = puntosC.split(" ");
+        String registro, orientacion;
+
+        if (op.equals("fleq")) {
+            orientacion = "i"; //apertura hacia la izq
+        } else {
+            //op == fgeq
+            orientacion = "d"; //apertura hacia la der
+        }
+
+        registro = "SemiTrapezoide " + partsPoints[0] + " " + orientacion + " " + op + " " + partsPoints[1] + " 0";
+        objG.escribir(ruta, 1, registro, "final");
     }
 
     private String getUnits() {
@@ -201,7 +244,7 @@ public class VariableEntrada {
             return true;
         }
 
-        if (pc1 < objU.getOrigen() || pc1 > objU.getFin() || pc2 < objU.getOrigen() || pc2 > objU.getFin()) {
+        if (objU.getFin() < pc1 || pc1 < objU.getOrigen() || pc2 < objU.getOrigen() || pc2 > objU.getFin()) {
             System.out.println("Error, los puntos críticos no se encuentran dentro del Universo de Discurso disponible");
             return true;
 
