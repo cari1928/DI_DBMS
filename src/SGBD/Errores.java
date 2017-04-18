@@ -445,11 +445,11 @@ public class Errores {
         5 La columna es difusa
         6 Contiene alguna palabra reservada: {FEQ, FGEQ, FLEQ}
         7 Contiene un $ o un #, $ seguido de letras y # seguido de números
-        8 Contiene la palabra reservada THOLD y seguido de él un número flotante
+        8 Verifica que la etiqueta linguistica esté disponible para esa tabla.columna
+        9 Contiene la palabra reservada THOLD y seguido de él un número flotante
          */
 
         int tabid, colid;
-        String variableL;
         String[] parts = condicion.split(" "), parts2;
 
         //NO TIENE LA ESTRUCTURA BÁSICA

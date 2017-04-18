@@ -95,18 +95,18 @@ public class VariableEntrada {
         }
     }
 
-    public void createTrapezoids(String puntosC, String op, String ruta) throws IOException {
+    public void createTrapezoids(String puntosC, String[] condition, String ruta) throws IOException {
         String[] partsPoints = puntosC.split(" ");
         String registro, orientacion;
 
-        if (op.equals("fleq")) {
+        if (condition[1].equals("fleq")) {
             orientacion = "i"; //apertura hacia la izq
         } else {
             //op == fgeq
             orientacion = "d"; //apertura hacia la der
         }
 
-        registro = "SemiTrapezoide " + partsPoints[0] + " " + orientacion + " " + op + " " + partsPoints[1] + " 0";
+        registro = "SemiTrapezoide " + partsPoints[0] + " " + orientacion + " " + condition[2].split("\\$")[1] + " " + partsPoints[1] + " 0";
         objG.escribir(ruta, 1, registro, "final");
     }
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import GestionSistema.GestionArchivos;
 import GestionSistema.Sistema;
+import SED.MotorInferencia;
 import SED.VariableEntrada;
 import java.util.ArrayList;
 
@@ -1249,7 +1250,7 @@ public class Automatas {
         Sistema objS = new Sistema();
         VariableEntrada objV = new VariableEntrada("", this);
         String[] partsCondition = condicion.split(" ");
-        String registro;
+        String registro, type = "#";
         Double[] criticPoints;
 
         //OBTENCIÓN DEL UNIVERSO DE DISCURSO
@@ -1260,13 +1261,19 @@ public class Automatas {
 
         //CREACIÓN DEL TRAPECIO
         criticPoints = objS.getCriticPoints(partsCondition, RUTA + "/SED/" + partsCondition[0]); //PODRÍA CONTENER NULL 
+        if (criticPoints.length == 2) {
+            type = "$";
+        }
         //Agrega la info del trapecio
-        objV.createTrapezoids(criticPoints[0] + " " + criticPoints[1], partsCondition[1], RUTA + "SED/" + partsCondition[0] + ".tmp");
+        objV.createTrapezoids(
+                criticPoints[0] + " " + criticPoints[1], partsCondition, RUTA + "SED/" + partsCondition[0] + ".tmp");
 
-        objS.showFile(RUTA + "SED/" + partsCondition[0] + ".tmp");
+        //PARA PRUEBAS
+        //objS.showFile(RUTA + "SED/" + partsCondition[0] + ".tmp");
+        //FUZZYFICATION
+        objS.fuzzyResult(RUTA, partsCondition, type);
 
         //PRUEBAS, checar contenido de Lregistros
-        System.out.println(Lregistros.toString());
         System.out.println(objTResultante.toString());
 
         return null; //retorna registros
