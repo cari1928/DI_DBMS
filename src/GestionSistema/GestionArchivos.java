@@ -258,5 +258,10 @@ public class GestionArchivos {
             ex.printStackTrace();
         }
     }
+    
+    public void deleteFile(String ruta) {
+        File file = new File(ruta);
+        file.delete();
+    }
 
 }

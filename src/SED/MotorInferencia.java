@@ -34,7 +34,7 @@ public class MotorInferencia {
         if (listSemiTrapezoide != null) {
             for (SemiTrapezoide semiTrapezoide : listSemiTrapezoide) {
                 semiTrapezoide.membresiaY = calcularY(semiTrapezoide);
-                resultado = semiTrapezoide.membresiaY + "";
+                //resultado = semiTrapezoide.membresiaY + "";
             }
         }
         if (resultado.equals("")) {

@@ -71,7 +71,7 @@ public class VariableEntrada {
      */
     public void askDiscourseUniverse(String registro) throws IOException {
         boolean flag;
-        String ruta = objA.getRUTA() + "/SED/";
+        String ruta = objA.getRUTA() + "SED/";
         String[] parts;
 
         if (registro == null) { //si el registro está vacío, comienza a llenarse

@@ -20,18 +20,18 @@ public class Tabla {
     private double nrengs;
     private int nindex;
     
-    private List<Registro> registro = new ArrayList<>();
+    private List<Registro> listRegistro = new ArrayList<>();
 
     public Tabla() {
         columnas = new ArrayList<>();
     }
 
-    public List<Registro> getRegistro() {
-        return registro;
+    public List<Registro> getListRegistro() {
+        return listRegistro;
     }
 
-    public void setRegistro(List<Registro> registro) {
-        this.registro = registro;
+    public void setListRegistro(List<Registro> listRegistro) {
+        this.listRegistro = listRegistro;
     }
     
     

@@ -2,7 +2,11 @@ package GestionSistema;
 
 import SED.Gauss;
 import SED.MotorInferencia;
+import SGBD.Columna;
+import SGBD.Registro;
+import SGBD.Tabla;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -103,11 +107,14 @@ public class Sistema {
     }
 
     //type = $ | #
-    public void fuzzyResult(String rutaBase, String[] partsCondition, String whereType) throws IOException {
+    public List<String[]> fuzzyResult(String rutaBase, String[] partsCondition, String whereType) throws IOException {
         String[] tableCol = partsCondition[0].split("\\."), parts; //pos 0 = tabla, pos 1 = columna
+
         List<String> lTablas = objG.leer(rutaBase + "tablas");
         List<String> lColumnas = objG.leer(rutaBase + "columnas");
         List<String> lRegistro = objG.leer(rutaBase + tableCol[0] + ".dat");
+        List<String[]> rFinales = new ArrayList<>();
+
         int tabid = 0, poscol = 0, cont;
         String fuzzyRes;
 
@@ -142,15 +149,16 @@ public class Sistema {
             }
 
             if (Double.parseDouble(fuzzyRes) != 0) {
-                //AGREGAR A ESTRUCTURA
-                //INCLUIR COLUMNA DE RESULTADO DIFUSO
-                System.out.println(fuzzyRes + " AGREGADO A LA ESTRUCTURA");
+                //TODO, checar esto
+                rFinales.add(new String[]{parts[0], fuzzyRes});
             }
         }
+        return rFinales;
     }
 
     private String fuzzyProcess$(String valor, String[] partsCondition, String ruta) throws IOException {
         MotorInferencia objMI = new MotorInferencia();
+        Double tmp;
         double value;
         String simpleValue;
 
@@ -170,8 +178,15 @@ public class Sistema {
             if (partsCondition[2].contains(simpleValue)) {
                 return "1"; //porque es la misma etiqueta linguistica
             } else {
-                //si no lo es, buscar algún posible punto de intersección
-                return intPoint(partsCondition, simpleValue, ruta.split("SED")[0]) + "";
+                //buscar algún posible punto de intersección
+                tmp = intPoint(partsCondition, simpleValue, ruta.split("SED")[0]);
+                //se encontró un punto de intersección y está dentro del rango [0,1]
+                if (tmp != null && (0 <= tmp && tmp <= 1)) {
+                    return tmp + ""; //se regresa el valor en Y(grados membresia)
+                } else {
+                    //es una etiqueta interna
+                    return "1";
+                }
             }
         }
         return null;
@@ -182,7 +197,7 @@ public class Sistema {
         return null;
     }
 
-    private double intPoint(String[] partsCondition, String simpleValue, String rutaBase) throws IOException {
+    private Double intPoint(String[] partsCondition, String simpleValue, String rutaBase) throws IOException {
         Gauss objGauss;
         //obtengo registros del archivo temporal
         List<String> listSemiT = objG.leer(rutaBase + "SED/" + partsCondition[0] + ".tmp");
@@ -203,7 +218,7 @@ public class Sistema {
         objGauss = new Gauss(ecSemiTrap, ecTrap);
         pInt = objGauss.getIntPoint(); //obtiene el punto de interseccion
         if (pInt == null) {
-            return 0;
+            return null;
         } else {
             return pInt[1]; //grado de membresía
         }
@@ -325,4 +340,87 @@ public class Sistema {
         return ecFinal;
     }
 
+    public List<String[]> comparaRegistros(Tabla objTResultante, List<String[]> lResultado) {
+        List<Registro> lRegistro = objTResultante.getListRegistro();
+        List<String[]> lFinal = new ArrayList<>();
+        List<Columna> lColumnas;
+        String[] res;
+        boolean flag;
+
+        for (int i = 0; i < lRegistro.size(); i++) {
+            flag = true;
+            lColumnas = lRegistro.get(i).getList_columnas();
+
+            for (int j = 0; j < lColumnas.size() && flag; j++) {
+                for (int k = 0; k < lResultado.size() && flag; k++) {
+                    res = lResultado.get(k);
+
+                    if (lColumnas.get(j).getContenido().equals(res[0])) {
+                        //guarda la posición y el grado de membresía
+                        lFinal.add(new String[]{i + "", res[1]});
+                        flag = false;
+                    }
+                }
+            }
+        }
+        return lFinal;
+    }
+
+    /**
+     * Solo se mantiene por pruebas
+     *
+     * @param partsCondition
+     * @param simpleValue
+     * @param ruta
+     * @deprecated porque no es necesario
+     */
+    private void etiquetaInterna(String[] partsCondition, String simpleValue, String ruta) {
+        List<String> lRegistros, lTmp;
+        String[] parts;
+        double pI, dist;
+
+        try {
+            //busca el punto inferior del trapecio más a la derecha
+            lRegistros = objG.leer(ruta);
+            lTmp = objG.leer(ruta + ".tmp");
+
+            for (String registro : lRegistros) {
+
+                if (registro.contains(simpleValue)) {
+                    parts = registro.split(" ");
+
+                    if (parts[0].equals("Trapezoide")) {
+
+                        if (partsCondition[1].equals("fleq")) {
+                            //toma el punto inferior más a la derecha
+                            dist = Double.parseDouble(parts[1]) - Double.parseDouble(parts[4]);
+                            pI = Double.parseDouble(parts[2]) + dist;
+                        } else {
+                            //partsCondition == fgeq
+                            //toma el punto inferior más a la izquierda
+                            pI = Double.parseDouble(parts[4]);
+                        }
+
+                    } else {
+                        //parts[0] == "SemiTrapezoide"
+                        //se toma la misma posicion sin importar que sea fleq y fgeq
+                        pI = Double.parseDouble(parts[4]);
+
+                    }
+                    break; //ya se obtuvo el punto inferior más a la derecha
+                }
+            }
+
+            for (String r : lTmp) {
+                if (r.contains("Trap")) {
+                    parts = r.split(" ");
+
+                }
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+    }
 }
