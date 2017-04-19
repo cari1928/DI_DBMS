@@ -78,16 +78,16 @@ public class VariableEntrada {
             registro = getRange(); //pide el rango de origen - fin del universo de discurso
             registro += " " + getUnits(); //pide las unidades 
             registro += " " + objU.getVariable();
+            //crea el archivo con el nombre de la objU.getVariable()
+            objG.escribir(ruta + objU.getTable() + "." + objU.getVariable(), 1, registro, "nuevo");
             flag = true;
         } else {//registro no es null entonces no está vacío
             parts = registro.split(" ");
             objU.setOrigen(Double.parseDouble(parts[0]));
             objU.setFin(Double.parseDouble(parts[1]));
+            objG.escribir(ruta + objU.getTable() + "." + objU.getVariable() + ".tmp", 1, registro, "nuevo");
             flag = false;
         }
-
-        //crea el archivo con el nombre de la objU.getVariable()
-        objG.escribir(ruta + objU.getTable() + "." + objU.getVariable() + ".tmp", 1, registro, "nuevo");
 
         if (flag) {
             //guarda el nombre de la objU.getVariable() en el archivo Datos
@@ -203,6 +203,7 @@ public class VariableEntrada {
                 //SemiTrapezoide
                 if (countShape == 1) {
                     flag = halfLeftTrapezoid(pc1); //verifica aspectos de un trapezoide a la izquierda
+                    objU.setOrigen(2 * objSemiT.getPuntoC()[0]);
                     orientacion = "i";
                 } else {
                     flag = halfRightTrapezoid(pc1); //verifica aspectos de un trapezoide a la derecha
@@ -214,6 +215,10 @@ public class VariableEntrada {
                     registro = "SemiTrapezoide " + objSemiT.getPuntoC()[0] + " " + orientacion + " "
                             + objSemiT.getEtiqueta() + " " + objU.getOrigen() + " 0";
                     objG.escribir(ruta, countShape, registro, "final");
+
+                    if (countShape == 1) {
+                        objU.setOrigen(0); //para que funcione con el semiT a la izq
+                    }
 
                     objSemiT.setAux(aux);
                     objSemiT.setOrigen(objU.getOrigen());

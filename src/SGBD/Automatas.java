@@ -38,23 +38,23 @@ public class Automatas {
         error = new Errores(objBD, objG);
         varEntrada = false;
     }
-    
+
     public void setQuery(String query) {
         this.query = query;
     }
-    
+
     public boolean isVarEntrada() {
         return varEntrada;
     }
-    
+
     public void setVarEntrada(boolean varEntrada) {
         this.varEntrada = varEntrada;
     }
-    
+
     public BaseDatos getObjBD() {
         return objBD;
     }
-    
+
     public String getRUTA() {
         return RUTA;
     }
@@ -106,12 +106,12 @@ public class Automatas {
         //obtener nombre de la BD
         String[] parts = query.split("database ");
         String nombd = parts[1];
-        
+
         error.chCrearBD("crearBD", nombd);
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         objG.crearDirectorio("BD"); //por si no existe
         objG.crearDirectorio("BD\\" + nombd + ".dbs");
         return true;
@@ -123,7 +123,7 @@ public class Automatas {
      */
     public boolean chUsarBD() {
         String[] parts;
-        
+
         query = query.toLowerCase();
         int res = query.indexOf("use database ");
         if (res == -1) {
@@ -131,12 +131,12 @@ public class Automatas {
         }
         parts = query.split("database ");
         String nombbd = parts[1];
-        
+
         error.chExisteBD("usarBD", nombbd);
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         objBD.setNombre(nombbd); //no es necesario crear la estructura de datos
         RUTA = "BD\\" + objBD.getNombre() + ".dbs\\";
         error.setRUTABD(RUTA);
@@ -171,7 +171,7 @@ public class Automatas {
         }
         nombtab = registro;
         registro += " ";
-        
+
         try {
             n = objG.contarRengs(RUTA + "tablas");
             parts = parts[1].split(" \\)");
@@ -196,7 +196,7 @@ public class Automatas {
             objG.crearArchivo(RUTA + nombtab + ".dat");
             System.out.println("TABLA " + nombtab + " CREADA CORRECTAMENTE");
             return true;
-            
+
         } catch (IOException ex) {
             ex.printStackTrace();
             return false;
@@ -215,12 +215,12 @@ public class Automatas {
         if (error.getDslerr() != 0) {
             return null;
         }
-        
+
         query = query.toLowerCase();
         if (!query.contains("create table ")) {
             return null;
         }
-        
+
         return query.split("create table ");
     }
 
@@ -239,12 +239,12 @@ public class Automatas {
                 registro += partecitas[i];
             }
         }
-        
+
         error.chTablaExiste("crearTabla", registro);
         if (error.getDslerr() != 0) {
             return null;
         }
-        
+
         return registro;
     }
 
@@ -259,7 +259,7 @@ public class Automatas {
         registro += n + 501 + " ";
         registro += nombtab + ".dat ";
         registro += 150 + " ";
-        
+
         parts = parts[0].split(", ");
         registro += parts.length + " ";
         registro += 0 + " ";
@@ -280,7 +280,7 @@ public class Automatas {
         if (!checkDataTypes(parts)) { //verifica que se hayan escrito tipos de dato válidos
             return null;
         }
-        
+
         for (String part : parts) {
             registro = "";
             parts2 = part.split(" ");
@@ -328,7 +328,7 @@ public class Automatas {
                     && !parts2[1].contains("float") && !parts2[1].contains("double")) {
                 return false;
             }
-            
+
             parts3 = parts2[1].split(" ");
             if (!parts3[1].contains("d") && !parts3[1].contains("f")) {
                 return false;
@@ -336,22 +336,22 @@ public class Automatas {
         }
         return true;
     }
-    
+
     private String checkFuzziness(String[] parts) {
         String[] parts2;
         String type = "d";
-        
+
         for (String part : parts) {
             parts2 = part.split(":");
             parts2 = parts2[1].split(" ");
-            
+
             if (parts2[1].equals("f")) {
                 return parts2[1];
             }
         }
         return type;
     }
-    
+
     private char[] getChars(String cadena, int tamaño) {
         char[] tmp = new char[tamaño];
         for (int i = 0; i < tmp.length; i++) {
@@ -385,49 +385,49 @@ public class Automatas {
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         query = query.toLowerCase();
         int casos = 1, res = 0;
         while (flag) {
-            
+
             switch (casos) {
                 case 1:
                     res = query.indexOf("create unique asc index ");
                     indtipo = 'U';
                     break;
-                
+
                 case 2:
                     res = query.indexOf("create unique desc index ");
                     indtipo = 'U';
                     break;
-                
+
                 case 3:
                     res = query.indexOf("create asc index ");
                     indtipo = 'D';
                     break;
-                
+
                 case 4:
                     res = query.indexOf("create desc index ");
                     indtipo = 'D';
                     break;
-                
+
                 case 5:
                     res = query.indexOf("create unique index ");
                     indtipo = 'U';
                     break;
-                
+
                 case 6:
                     res = query.indexOf("create index ");
                     indtipo = 'D';
                     break;
             }
-            
+
             if (res == -1) { //si no encontró esas sentencias
                 ++casos; //pasa al siguente caso
             } else {
                 flag = false; //sintaxis del query incorrecta
             }
-            
+
             if (casos == 7) { //ya terminó todos los casos
                 return false; //no fue ninguno de los casos
             }
@@ -458,7 +458,7 @@ public class Automatas {
         if (nomcols.length > 4) { //deben ser 4 columnas por índice
             return false;
         }
-        
+
         colsid = new int[4];
         for (int i = 0; i < 4; i++) {
             if (i < nomcols.length) {
@@ -487,7 +487,7 @@ public class Automatas {
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         try {
             //escribir en indices
             indid = objG.contarRengs("indices");
@@ -507,7 +507,7 @@ public class Automatas {
                     i = list.size(); //para que no recorra lo demás
                 }
             }
-            
+
             for (int i = 0; i < list.size(); i++) {
                 if (i == 0) {
                     objG.escribir(RUTA + "tablas", i, registro, "nuevo");
@@ -520,7 +520,7 @@ public class Automatas {
         } catch (Exception e) {
             System.out.println("ERROR: ESCRIBIRINIDCE");
         }
-        
+
         return true;
     }
 
@@ -536,10 +536,10 @@ public class Automatas {
         try {
             list = objG.leer("indices");
             for (int i = 0; i < list.size(); i++) {
-                
+
                 parts = list.get(i).split(" ");
                 if (Integer.parseInt(parts[1]) == tabid) {
-                    
+
                     if (mayor < Integer.parseInt(parts[6])) {
                         mayor = Integer.parseInt(parts[6]);
                     }
@@ -562,12 +562,12 @@ public class Automatas {
         int idtab[] = new int[2];
         int idcolumn[] = new int[2];
         String columns[] = new String[2];
-        
+
         error.chBdActiva("chCrearReferencia");
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         query = query.toLowerCase();
         //VERIFICAR QUE TENGA CREATE REFERENCE
         int res = query.indexOf("create reference");
@@ -596,7 +596,7 @@ public class Automatas {
         if (!error.chComparaTipoColumnas("chCrearReferencia", idtab, idcolumn)) {
             return false;
         }
-        
+
         for (int j = 0; j < objBD.getListTablas().size(); j++) {
             objT = objBD.getListTablas().get(j); //para simplificar el código siguiente
 
@@ -625,7 +625,7 @@ public class Automatas {
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         query = query.toLowerCase(); //minúsculas
         if (!query.contains("insert into ")) {
             //System.out.println("SENTENCIA NO VÁLIDA"); //Ése mensaje no es adecuado para la lógica del programa
@@ -707,7 +707,7 @@ public class Automatas {
                 ex.printStackTrace();
             }
         }
-        
+
         valores = query.split("values \\( ");
         valores = valores[1].split(" \\)");
         valores = valores[0].split(", ");
@@ -715,7 +715,7 @@ public class Automatas {
         for (String[] ordenColumna : ordenColumnas) {
             ordenColumna[2] = "null"; //Se coloca la palabra null en todas las columnas para posteriormente escribir null en los campos que no se especificaron
         }
-        
+
         for (int i = 0; i < columnas.length; i++) {
             for (String[] ordenColumna : ordenColumnas) {
                 if (columnas[i].equals(ordenColumna[1])) {
@@ -726,9 +726,9 @@ public class Automatas {
 
         //checa variables difusas
         for (String[] ordenColumna : ordenColumnas) {
-            
+
             if (!ordenColumna[2].equals("null")) {
-                
+
                 if (!ordenColumna[2].contains("'")) {
                     // no tiene comillas simples
                     if (ordenColumna[2].contains("<")) {
@@ -759,7 +759,7 @@ public class Automatas {
                 }
             }
         }
-        
+
         for (int i = 0; i < ordenColumnas.length; i++) {
             if (!ordenColumnas[i][2].equals("null")) {
                 if (!error.chComparaTipoColumnas("chInsert", tabid, Integer.parseInt(ordenColumnas[i][0]), valores[i])) {
@@ -795,13 +795,12 @@ public class Automatas {
      */
     private boolean chSelect() {
         String columnas[] = null, tablas[] = null, parts[], condiciones[] = null;
-        int res;
         Tabla objTresultante;
         error.chBdActiva("chSelect");
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         query = query.toLowerCase();
         Lcondiciones = new ArrayList<>(); //guarda las condiciones y sus operadores lógicos
         Lregistros = new ArrayList<>(); //guarda la info de todas las tablas
@@ -809,7 +808,7 @@ public class Automatas {
         if (!query.contains("select")) {
             return false;
         }
-        
+
         if (!query.contains("*")) {
             //llena arreglo columnas
             parts = query.split("select ")[0].split(" from"); //obtengo las columnas que se desean seleccionar
@@ -844,11 +843,12 @@ public class Automatas {
         //checar si objTresultante está vacío
         try {
             //PARA PRUEBAS
-            chCondicionDifusa("persona.edad fleq $adulto", objTresultante);
+            //chCondicionDifusa("persona.edad fgeq $joven", objTresultante);
+            chCondicionDifusa("horario.tiempo fgeq $tarde", objTresultante);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        
+
         if (query.contains(" where ")) { // Si hay condiciones...
             LselecCond = new ArrayList<>(); //guarda las condiciones a mostrar al usuario
             tratado_condiciones(query.split(" where ")[1]); //Gurda todas las condiciones que tiene en una lista de String la forma en como guarda es condicion y operafor logico la siguiente condicion asi sucesivamente
@@ -856,22 +856,22 @@ public class Automatas {
         } else {
             imprimeResultado(columnas, tablas);
         }
-        
+
         return true;
     }
-    
+
     private void imprimeResultado(String[] columnas, String[] tablas) {
         String resultado = "| ";
         Tabla objT;
         List<Columna> listC;
-        
+
         if (columnas == null) {
             for (int i = 0; i < Lregistros.size(); i++) {
                 objT = Lregistros.get(i);
-                
+
                 for (int j = 0; j < objT.getListRegistro().size(); j++) {
                     listC = objT.getListRegistro().get(j).getList_columnas();
-                    
+
                     for (int k = 0; k < listC.size(); k++) {
                         if (k == (listC.size() - 1)) {
                             resultado += listC.get(k).getContenido();
@@ -885,15 +885,15 @@ public class Automatas {
             }
         } else {
             for (int i = 0; i < columnas.length; i++) {
-                
+
                 for (int j = 0; j < Lregistros.size(); j++) {
                     objT = Lregistros.get(j);
-                    
+
                     if (objT.getNombtab().equals(columnas[i].split(".")[0])) {
-                        
+
                         for (int k = 0; k < objT.getListRegistro().size(); k++) {
                             listC = objT.getListRegistro().get(k).getList_columnas();
-                            
+
                             for (int l = 0; l < listC.size(); l++) {
                                 if (l == (listC.size() - 1)) {
                                     resultado += listC.get(l).getContenido();
@@ -924,7 +924,7 @@ public class Automatas {
         if (posicion >= Lregistros.get(0).getListRegistro().size()) { //pregunto si
             return objTresultante;
         }
-        
+
         objT_anterior = Lregistros.get(0);
         objR_anterior = objT_anterior.getListRegistro().get(posicion);  //obtengo el registro a trabajar o tratar
 
@@ -933,12 +933,12 @@ public class Automatas {
             //puede que esté demás
             //objR_anterior.getList_columnas().get(i).setNomcol(getChars(obtenerNombresColumnas(objR_anterior.getList_columnas().get(i).getNomcol()), 10)); //Asigna la columna
         }
-        
+
         if (tablas.length == 1) {
             objTresultante.getListRegistro().add(objR_anterior);
             objTresultante = obtener_tabla_resultante(tablas, posicion + 1, objTresultante);
         } else {
-            
+
             for (int i = 1; i < Lregistros.size(); i++) { //Recorro todas las tablas...
                 objT_nueva = Lregistros.get(i);  //Obtengo la i_esima tabla...
                 parts = tablas[i].split(" ");    //obtengo la informacion de la nueva tabla a seleccionar que se mando en el query junto con la informacion del "on"...
@@ -988,17 +988,17 @@ public class Automatas {
         }
         return objTresultante;
     }
-    
+
     private String obtenerNombresColumnas(char NomCol[]) {
         String nombre = "";
-        
+
         for (int i = 0; i < NomCol.length; i++) {
             nombre += NomCol[i] + "";
         }
-        
+
         return nombre;
     }
-    
+
     private void obtener_todos_registros(String tablas[], int posicion) {
         Registro objR;
         Tabla objT;
@@ -1006,7 +1006,7 @@ public class Automatas {
         String[] parts, parts2, parts4;
         List<Columna> list_columnas;
         List<String> tables, columns, registros;
-        
+
         if (posicion < tablas.length) {
             try {
                 objT = new Tabla();
@@ -1014,7 +1014,7 @@ public class Automatas {
                 tables = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\tablas");
                 columns = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\columnas");
                 registros = objG.leer("BD\\" + objBD.getNombre() + ".dbs\\" + parts[0] + ".dat");
-                
+
                 for (int i = 0; i < tables.size(); i++) {
                     parts2 = tables.get(i).split(" "); //se divide la informacion de cada registro de archivo tablas
 
@@ -1025,7 +1025,7 @@ public class Automatas {
 
                         for (int j = 0; j < registros.size(); j++) {
                             objR = new Registro();
-                            
+
                             list_columnas = new ArrayList<>();
                             for (int k = 0; k < columns.size(); k++) { // se recorren todas las columnas
                                 parts4 = columns.get(k).split(" "); //se dividen la informacion de cada registro del archivo columnas
@@ -1036,7 +1036,7 @@ public class Automatas {
                                     list_columnas.add(objC); //Agregamos la columna a la lista columnas.
                                 }
                             }
-                            
+
                             objR.setList_columnas(list_columnas);
                             String parts3[] = registros.get(j).split(" ");
                             for (int l = 0; l < parts3.length; l++) {
@@ -1047,7 +1047,7 @@ public class Automatas {
                         Lregistros.add(objT); //guarda la tabla con todos los registros
                     }
                 }
-                
+
                 obtener_todos_registros(tablas, (posicion + 1));
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1097,9 +1097,9 @@ public class Automatas {
                 }
             }
         }
-        
+
     }
-    
+
     private Tabla evaluaCondDet(String condicion) {
         String parts[] = condicion.split(" ");
         Tabla objT = new Tabla();
@@ -1108,24 +1108,24 @@ public class Automatas {
         if (!condicion.contains(" ")) {
             return null;
         }
-        
+
         objT.setTabid(error.chTablaExiste("select", parts[0].split(".")[0]));
         if (error.getDslerr() != -1) {
             System.out.println("Error cerca de la condicion where, la tabla no existe");
             return null;
         }
-        
+
         objC.setColid(error.chColumnasExisten("select", parts[0].split(".")[1], objT.getTabid()));
         System.out.println("Error cerca de la condicion where la columna no existe");
         if (error.getDslerr() != -1) {
             return null;
         }
-        
+
         switch (parts[1]) {
             case "=":
                 switch (parts[2].charAt(0)) {
                     case '\'':
-                        
+
                         if (parts[2].charAt((parts[2].length() - 1)) != '\'' || parts[2].length() - 1 == 0) {
                             System.out.println("Error cerca de la condición where, sintaxis");
                             return null;
@@ -1139,7 +1139,7 @@ public class Automatas {
                         } catch (Exception e) {
                         }
                         break;
-                    
+
                     default:
                         try {
                             prueba = Double.parseDouble(parts[2]);
@@ -1167,10 +1167,10 @@ public class Automatas {
                 System.out.println("Error cerca de la condición where, sintaxis");
                 return null;
         }
-        
+
         return objT;
     }
-    
+
     private Tabla chCondicionDeterminista(String condicion, Tabla objT) {
         Tabla objTR = new Tabla();
         List<String> registros, columnas;
@@ -1195,10 +1195,10 @@ public class Automatas {
             if (registros.size() < 1) {
                 return null;
             }
-            
+
             for (int i = 0; i < registros.size(); i++) {
                 parts = registros.get(i).split(" ");
-                
+
                 switch (parts[1]) {
                     case "=":
                         if (parts[cont].trim().equals(parts[2])) {
@@ -1266,18 +1266,18 @@ public class Automatas {
         if (criticPoints.length == 2) {
             type = "$";
         }
-        //Agrega la info del trapecio
         objV.createTrapezoids(
                 criticPoints[0] + " " + criticPoints[1], partsCondition, RUTA + "SED/" + partsCondition[0] + ".tmp");
+
+        objS.showFile(RUTA + "SED/" + partsCondition[0] + ".tmp");
 
         //FUZZYFICATION
         lResultado = objS.fuzzyResult(RUTA, partsCondition, type);
 
         //Obtiene estructura final
         lResultado = objS.comparaRegistros(objTResultante, lResultado);
-        
-        objS.showFile(RUTA + "SED/" + partsCondition[0] + ".tmp");
-        objG.deleteFile(RUTA + "SED/" + partsCondition[0] + ".tmp");
+
+        objG.deleteFile(RUTA + "SED/" + partsCondition[0] + ".tmp"); //ya no se necesita el archivo tmp
         return lResultado;
     }
 
@@ -1295,7 +1295,7 @@ public class Automatas {
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         query = query.toLowerCase();
         parts = query.split("update ");
         if (parts.length == 1) { //no hay update
@@ -1315,7 +1315,7 @@ public class Automatas {
             //comenzar a recorrer buscando las condiciones
             //teniendo en cuenta los AND y OR
             whereConditions(parts, objT);
-            
+
             columnas = parts[0].split(",");
             for (String columna : columnas) {
                 parts = columna.split("=");
@@ -1330,7 +1330,7 @@ public class Automatas {
                 if (error.getDslerr() != 0) {
                     return false;
                 }
-                
+
                 if (!whereConditions(parts, objT)) {
                     return false;
                 }
@@ -1352,7 +1352,7 @@ public class Automatas {
         List<Boolean> results = new ArrayList<>();
         String[] whereElements, parts;
         whereElements = where[1].split(" ");
-        
+
         for (String whereE : whereElements) { //recorre cada elemento del estatuto where
 
             if (whereE.equals("and") || whereE.equals("or")) {
@@ -1376,9 +1376,9 @@ public class Automatas {
                 }
             }
         }
-        
+
         return chConditions(logic, results);
-        
+
     }
 
     //procesa las condiciones concatenando los resultados booleanos
@@ -1393,26 +1393,26 @@ public class Automatas {
                 } else {
                     r |= results.get(i);
                 }
-                
+
             }
         }
-        
+
         return r;
     }
-    
+
     private boolean chShowDBFiles() {
         error.chBdActiva("showSedFiles");
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         if (query.contains("show db files")) {
             showBDFiles();
             return true;
         }
         return false;
     }
-    
+
     private void showBDFiles() {
         String parts[];
         List<String> lista, listTables = new ArrayList<>();
@@ -1424,7 +1424,7 @@ public class Automatas {
                 listTables.add(parts[0]); //guardo el nombre de las tablas
                 System.out.println(lista.get(i));
             }
-            
+
             for (String table : listTables) {
                 System.out.println("TABLA " + table);
                 lista = objG.leer(RUTA + table + ".dat");
@@ -1432,13 +1432,13 @@ public class Automatas {
                     System.out.println(listT);
                 }
             }
-            
+
             System.out.println("COLUMNAS");
             lista = objG.leer(RUTA + "columnas");
             for (int i = 0; i < lista.size(); i++) {
                 System.out.println(lista.get(i));
             }
-            
+
             System.out.println("INDICES");
             lista = objG.leer(RUTA + "indices");
             for (int i = 0; i < lista.size(); i++) {
@@ -1448,20 +1448,20 @@ public class Automatas {
             e.printStackTrace();
         }
     }
-    
+
     private boolean chShowSEDFiles() {
         error.chBdActiva("crearTabla");
         if (error.getDslerr() != 0) {
             return false;
         }
-        
+
         if (query.contains("show sed files")) {
             showSEDFiles();
             return true;
         }
         return false;
     }
-    
+
     private void showSEDFiles() {
         GestionArchivos objGsed = new GestionArchivos();
         List<String> regDatos, regFiles;
@@ -1470,7 +1470,7 @@ public class Automatas {
             for (String regDato : regDatos) {
                 //System.out.println("SED/" + regDato);
                 regFiles = objGsed.leer((RUTA + "SED\\" + regDato).trim());
-                
+
                 System.out.println("ARCHIVO " + regDato);
                 for (String regFile : regFiles) {
                     System.out.println(regFile);
@@ -1480,5 +1480,5 @@ public class Automatas {
             e.printStackTrace();
         }
     }
-    
+
 }

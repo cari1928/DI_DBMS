@@ -403,6 +403,7 @@ public class Errores {
         }
 
         System.out.println("ERROR: " + dslerr + " " + accion + " " + metodo);
+        System.out.println("POSIBLE ERROR DE SINTAXIS");
     }
 
     public Tabla obtenerTabla(int tabid) {
@@ -456,7 +457,7 @@ public class Errores {
         if (parts.length != 3 && parts.length != 5) {
             return false; //la estructura de la condición es incorrecta
         }
-        
+
         if (!parts[0].contains(".")) { //verifica que se cumpla la estructura tabla.columna
             return false;
         }

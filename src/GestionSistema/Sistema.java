@@ -53,7 +53,7 @@ public class Sistema {
      */
     public Double[] getCriticPoints(String[] partsCondition, String ruta) throws IOException {
         String[] parts2;
-        double tmpDistance;
+        double tmpDistance, fin = 0, origen;
         Double[] criticPoints;
         List<String> listR;
 
@@ -67,19 +67,43 @@ public class Sistema {
                     //contiene la etiqueta linguistica
                     parts2 = r.split(" ");
 
+                    //obtiene la distancia entre el punto inferior izquierdo y el punto crítico 1
+                    tmpDistance = Math.abs(Double.parseDouble(parts2[1]) - Double.parseDouble(parts2[4]));
+
                     if (partsCondition[1].equals("fleq")) {
-                        criticPoints[0] = Double.parseDouble(parts2[2]); //obtiene el punto crítico más a la derecha
-                        //obtiene la distancia entre el punto inferior izquierdo y el punto crítico 1
-                        tmpDistance = Double.parseDouble(parts2[1]) - Double.parseDouble(parts2[4]);
-                        //obtiene el punto inferior de la derecha
-                        criticPoints[1] = criticPoints[0] + tmpDistance;
+                        if (parts2[0].equals("Trapezoide")) {
+                            criticPoints[0] = Double.parseDouble(parts2[2]); //obtiene el punto crítico más a la derecha
+                            //obtiene el punto inferior de la derecha
+                            criticPoints[1] = criticPoints[0] + tmpDistance;
+                        } else {
+                            //parts2 == SemiTrapezoide
+                            if (parts2[2].equals("i")) {
+                                criticPoints[0] = Double.parseDouble(parts2[1]); //obtiene el punto crítico
+                                criticPoints[1] = Double.parseDouble(parts2[4]); //obtiene el punto crítico
+                            } else {
+                                //parts2 == "d"
+                                criticPoints[0] = fin; //obtiene el punto crítico
+                                criticPoints[1] = fin + tmpDistance;
+                            }
+                        }
                     } else {
                         //partsC == FGEG
                         //toma el punto crítico más a la izquierda
                         criticPoints[0] = Double.parseDouble(parts2[1]);
                         criticPoints[1] = Double.parseDouble(parts2[4]); //toma el punto que va a la izquierda
+                        if (parts2[0].equals("SemiTrapezoide")) {
+                            if (parts2[2].equals("i")) {
+                                criticPoints[0] = 0.0;
+                                criticPoints[1] = criticPoints[0] - tmpDistance;
+                            }
+                        }
                     }
                     return criticPoints; //ya obtuvo los puntos críticos 
+
+                } else if (r.split(" ").length == 4) {
+                    //universo de discurso
+                    origen = Double.parseDouble(r.split(" ")[0]);
+                    fin = Double.parseDouble(r.split(" ")[1]);
                 }
             }
         } else {
@@ -139,14 +163,7 @@ public class Sistema {
 
         for (String registro : lRegistro) {
             parts = registro.split(" ");
-
-            if (whereType.equals("$")) {
-                //manda: registro de la columna, ruta
-                fuzzyRes = fuzzyProcess$(parts[poscol], partsCondition, rutaBase + "SED/" + partsCondition[0] + ".tmp");
-            } else {
-                //type == #
-                fuzzyRes = fuzzyProcessHash();
-            }
+            fuzzyRes = fuzzyProcess$(parts[poscol], partsCondition, rutaBase + "SED/" + partsCondition[0] + ".tmp");
 
             if (Double.parseDouble(fuzzyRes) != 0) {
                 //TODO, checar esto
@@ -160,32 +177,57 @@ public class Sistema {
         MotorInferencia objMI = new MotorInferencia();
         Double tmp;
         double value;
-        String simpleValue;
+        String etiqueta, simbolo = obtenerSimbolo(partsCondition[2]), whLabel = quitaSimbolo(partsCondition[2]);
+        String[] shape;
 
         if (!valor.contains("<")) {
             //valor numérico
             try {
                 value = Double.parseDouble(valor);
-                objMI.fuzzyfication(value, ruta, "$"); //CHECAR ESTO!!
+                objMI.fuzzyfication(value, ruta, simbolo); //CHECAR ESTO!!
                 return objMI.getResultado();
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         } else {
             //quito los <>
-            simpleValue = valor.split("<")[1].split(">")[0];
+            etiqueta = valor.split("<")[1].split(">")[0];
+            shape = tipoFigura(etiqueta, ruta.split(".tmp")[0]);
+
             //veo si es la et linguistica indicada en el where
-            if (partsCondition[2].contains(simpleValue)) {
+            if (whLabel.equals(etiqueta)) {
                 return "1"; //porque es la misma etiqueta linguistica
             } else {
                 //buscar algún posible punto de intersección
-                tmp = intPoint(partsCondition, simpleValue, ruta.split("SED")[0]);
+                tmp = intPoint(partsCondition, etiqueta, ruta.split("SED")[0]);
                 //se encontró un punto de intersección y está dentro del rango [0,1]
                 if (tmp != null && (0 <= tmp && tmp <= 1)) {
                     return tmp + ""; //se regresa el valor en Y(grados membresia)
                 } else {
-                    //es una etiqueta interna
-                    return "1";
+                    if (tmp > 0) {
+                        //es una etiqueta interna
+                        return "1";
+                    } else {
+
+                        if (shape.length == 2) {
+                            //es un semitrapezoide
+                            if (partsCondition[1].equals("fleq")) {
+                                if (shape[1].equals("i")) {
+                                    return "1";
+                                } else {
+                                    return "0";
+                                }
+                            } else {
+                                //fgeq
+                                if (shape[1].equals("d")) {
+                                    return "1";
+                                } else {
+                                    return "0";
+                                }
+                            }
+                        }
+                        return "0";
+                    }
                 }
             }
         }
@@ -276,13 +318,15 @@ public class Sistema {
                 } else {
                     //partsCondition[1] == fgeq
                     //toma los puntos más a la derecha del trapezoide o semitrap
-                    if (parts[1].equals("Trapezoide")) {
+                    if (parts[0].equals("Trapezoide")) {
                         points[0] = Double.parseDouble(parts[2]);
+                        dist = Math.abs(Double.parseDouble(parts[1]) - Double.parseDouble(parts[4]));
+                        points[1] = points[0] + dist;
                     } else {
                         //parts[1] == SemiTrapezoide
                         points[0] = Double.parseDouble(parts[1]);
+                        points[1] = Double.parseDouble(parts[4]);
                     }
-                    points[1] = Double.parseDouble(parts[4]);
                 }
                 return points;
             }
@@ -336,7 +380,6 @@ public class Sistema {
         ecFinal[1] = ecY[0];
         //sumamos las constantes y las pasamos al otro lado del igual
         ecFinal[2] = (ecX[1] + ecY[1]) * -1;
-
         return ecFinal;
     }
 
@@ -366,61 +409,32 @@ public class Sistema {
         return lFinal;
     }
 
-    /**
-     * Solo se mantiene por pruebas
-     *
-     * @param partsCondition
-     * @param simpleValue
-     * @param ruta
-     * @deprecated porque no es necesario
-     */
-    private void etiquetaInterna(String[] partsCondition, String simpleValue, String ruta) {
-        List<String> lRegistros, lTmp;
+    //busca el tipo de figura de una etiqueta
+    private String[] tipoFigura(String etiqueta, String ruta) throws IOException {
+        List<String> lRegistros = objG.leer(ruta);
         String[] parts;
-        double pI, dist;
 
-        try {
-            //busca el punto inferior del trapecio más a la derecha
-            lRegistros = objG.leer(ruta);
-            lTmp = objG.leer(ruta + ".tmp");
+        for (String r : lRegistros) {
+            if (r.contains(etiqueta)) {
+                parts = r.split(" ");
 
-            for (String registro : lRegistros) {
-
-                if (registro.contains(simpleValue)) {
-                    parts = registro.split(" ");
-
-                    if (parts[0].equals("Trapezoide")) {
-
-                        if (partsCondition[1].equals("fleq")) {
-                            //toma el punto inferior más a la derecha
-                            dist = Double.parseDouble(parts[1]) - Double.parseDouble(parts[4]);
-                            pI = Double.parseDouble(parts[2]) + dist;
-                        } else {
-                            //partsCondition == fgeq
-                            //toma el punto inferior más a la izquierda
-                            pI = Double.parseDouble(parts[4]);
-                        }
-
-                    } else {
-                        //parts[0] == "SemiTrapezoide"
-                        //se toma la misma posicion sin importar que sea fleq y fgeq
-                        pI = Double.parseDouble(parts[4]);
-
-                    }
-                    break; //ya se obtuvo el punto inferior más a la derecha
+                if (parts[0].equals("Trapezoide")) {
+                    return new String[]{parts[0]}; //solo manda el tipo
+                } else {
+                    //semitrapezoide
+                    return new String[]{parts[0], parts[2]}; //manda el semitrapezoide y su orientación
                 }
             }
-
-            for (String r : lTmp) {
-                if (r.contains("Trap")) {
-                    parts = r.split(" ");
-
-                }
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
 
+        return null; //no encontró la etiqueta
+    }
+
+    private String obtenerSimbolo(String valor) {
+        if (valor.contains("$")) {
+            return "$";
+        } else {
+            return "#";
+        }
     }
 }
