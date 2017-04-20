@@ -3,6 +3,7 @@ package SED;
 import java.io.IOException;
 import java.util.Scanner;
 import GestionSistema.GestionArchivos;
+import GestionSistema.Sistema;
 import SGBD.Automatas;
 
 /**
@@ -96,8 +97,15 @@ public class VariableEntrada {
     }
 
     public void createTrapezoids(String puntosC, String[] condition, String ruta) throws IOException {
+        Sistema objS = new Sistema();
         String[] partsPoints = puntosC.split(" ");
-        String registro, orientacion;
+        String registro, orientacion, etiqueta = objS.quitaSimbolo(condition[2]);
+        
+        if(condition[2].contains("$")) {
+            etiqueta = objS.quitaSimbolo(condition[2]);
+        } else {
+            etiqueta = "tmp";
+        }
 
         if (condition[1].equals("fleq")) {
             orientacion = "i"; //apertura hacia la izq
@@ -106,7 +114,7 @@ public class VariableEntrada {
             orientacion = "d"; //apertura hacia la der
         }
 
-        registro = "SemiTrapezoide " + partsPoints[0] + " " + orientacion + " " + condition[2].split("\\$")[1] + " " + partsPoints[1] + " 0";
+        registro = "SemiTrapezoide " + partsPoints[0] + " " + orientacion + " " + etiqueta + " " + partsPoints[1] + " 0";
         objG.escribir(ruta, 1, registro, "final");
     }
 

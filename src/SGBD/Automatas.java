@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import GestionSistema.GestionArchivos;
 import GestionSistema.Sistema;
-import SED.MotorInferencia;
 import SED.VariableEntrada;
 import java.util.ArrayList;
 
@@ -844,7 +843,7 @@ public class Automatas {
         try {
             //PARA PRUEBAS
             //chCondicionDifusa("persona.edad fgeq $joven", objTresultante);
-            chCondicionDifusa("horario.tiempo fgeq $tarde", objTresultante);
+            chCondicionDifusa("horario.tiempo fleq #100", objTresultante);
         } catch (IOException ex) {
             ex.printStackTrace();
         }

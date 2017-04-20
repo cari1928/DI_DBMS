@@ -54,11 +54,10 @@ public class Sistema {
     public Double[] getCriticPoints(String[] partsCondition, String ruta) throws IOException {
         String[] parts2;
         double tmpDistance, fin = 0, origen;
-        Double[] criticPoints;
+        Double[] criticPoints = new Double[2]; //prepara el contenedor de los puntos críticos
         List<String> listR;
 
         if (partsCondition[2].contains("$")) {
-            criticPoints = new Double[2]; //prepara el contenedor de los puntos críticos
             //se hará el proceso en base a una etiqueta linguística
             //obtiene la información de la variable linguística
             listR = objG.leer(ruta);
@@ -108,8 +107,8 @@ public class Sistema {
             }
         } else {
             //partsCondition[2] == #
-            criticPoints = new Double[1]; //será un semtrapezoide
-            criticPoints[0] = Double.parseDouble(partsCondition[2].split("#")[0]); //obtiene el valor a lado del #
+            criticPoints[0] = Double.parseDouble(partsCondition[2].split("#")[1]); //obtiene el valor a lado del #
+            criticPoints[1] = 2 * criticPoints[0];
             return criticPoints;
         }
 
@@ -175,7 +174,7 @@ public class Sistema {
 
     private String fuzzyProcess$(String valor, String[] partsCondition, String ruta) throws IOException {
         MotorInferencia objMI = new MotorInferencia();
-        Double tmp;
+        Double tmp, tmp2;
         double value;
         String etiqueta, simbolo = obtenerSimbolo(partsCondition[2]), whLabel = quitaSimbolo(partsCondition[2]);
         String[] shape;
@@ -199,7 +198,15 @@ public class Sistema {
                 return "1"; //porque es la misma etiqueta linguistica
             } else {
                 //buscar algún posible punto de intersección
-                tmp = intPoint(partsCondition, etiqueta, ruta.split("SED")[0]);
+                tmp = intPoint(partsCondition, etiqueta, ruta.split("SED")[0], null);
+                if (0 >= tmp || tmp >= 1) {
+                    tmp2 = intPoint(partsCondition, etiqueta, ruta.split("SED")[0], "otro");
+                    if (tmp2 != null) {
+                        if (0 <= tmp2 && tmp2 <= 1) {
+                            tmp = tmp2;
+                        }
+                    }
+                }
                 //se encontró un punto de intersección y está dentro del rango [0,1]
                 if (tmp != null && (0 <= tmp && tmp <= 1)) {
                     return tmp + ""; //se regresa el valor en Y(grados membresia)
@@ -208,7 +215,6 @@ public class Sistema {
                         //es una etiqueta interna
                         return "1";
                     } else {
-
                         if (shape.length == 2) {
                             //es un semitrapezoide
                             if (partsCondition[1].equals("fleq")) {
@@ -239,7 +245,7 @@ public class Sistema {
         return null;
     }
 
-    private Double intPoint(String[] partsCondition, String simpleValue, String rutaBase) throws IOException {
+    private Double intPoint(String[] partsCondition, String simpleValue, String rutaBase, String ind) throws IOException {
         Gauss objGauss;
         //obtengo registros del archivo temporal
         List<String> listSemiT = objG.leer(rutaBase + "SED/" + partsCondition[0] + ".tmp");
@@ -249,7 +255,7 @@ public class Sistema {
 
         //obtengo dos puntos por cada trapecio
         pSemiTrap = getPointsSemiTrap(listSemiT);
-        pTrap = getPointsTrap(partsCondition, simpleValue, listTrap);
+        pTrap = getPointsTrap(partsCondition, simpleValue, listTrap, ind);
 
         //obtengo las ecuaciones de esos dos puntos
         //cada ecuacion tiene la estructura: X + Y = Constante (los signos varían)
@@ -295,7 +301,7 @@ public class Sistema {
      * @param lTrap Lista de registros de la variable linguistica
      * @return valor en x de dos puntos
      */
-    private double[] getPointsTrap(String[] partsCondition, String rEtiqueta, List<String> lTrap) {
+    private double[] getPointsTrap(String[] partsCondition, String rEtiqueta, List<String> lTrap, String ind) {
         double[] points = null;
         String[] parts;
         double dist;
@@ -305,13 +311,19 @@ public class Sistema {
                 points = new double[2];
                 parts = r.split(" ");
                 if (partsCondition[1].equals("fleq")) {
-                    //toma los puntos más a la izquierda del trapezoide o semitrap
-                    points[0] = Double.parseDouble(parts[1]); //punto crítico más a la izq
 
                     if (parts[0].equals("Trapezoide")) {
-                        //obtiene la distancia que hay entre un punto crítico y un punto inferior
-                        points[1] = Double.parseDouble(parts[4]); //obtengo el punto inferior que necesito
+                        //toma los puntos más a la izquierda del trapezoide o semitrap
+                        if (ind == null) {
+                            points[0] = Double.parseDouble(parts[1]); //punto crítico más a la izq
+                            points[1] = Double.parseDouble(parts[4]); //obtengo el punto inferior que necesito
+                        } else {
+                            points[0] = Double.parseDouble(parts[2]);
+                            dist = Double.parseDouble(parts[1]) - Double.parseDouble(parts[4]);
+                            points[1] = points[0] + dist;
+                        }
                     } else {
+                        points[0] = Double.parseDouble(parts[1]); //punto crítico más a la izq
                         //parts[1] == SemiTrapezoide
                         points[1] = Double.parseDouble(parts[4]);
                     }
@@ -319,9 +331,14 @@ public class Sistema {
                     //partsCondition[1] == fgeq
                     //toma los puntos más a la derecha del trapezoide o semitrap
                     if (parts[0].equals("Trapezoide")) {
-                        points[0] = Double.parseDouble(parts[2]);
-                        dist = Math.abs(Double.parseDouble(parts[1]) - Double.parseDouble(parts[4]));
-                        points[1] = points[0] + dist;
+                        if (ind == null) {
+                            points[0] = Double.parseDouble(parts[2]);
+                            dist = Math.abs(Double.parseDouble(parts[1]) - Double.parseDouble(parts[4]));
+                            points[1] = points[0] + dist;
+                        } else {
+                            points[0] = Double.parseDouble(parts[1]);
+                            points[1] = Double.parseDouble(parts[4]);
+                        }
                     } else {
                         //parts[1] == SemiTrapezoide
                         points[0] = Double.parseDouble(parts[1]);
@@ -340,7 +357,7 @@ public class Sistema {
      * @param etiqueta $joven o #19
      * @return Etiqueta sin el símbolo
      */
-    private String quitaSimbolo(String etiqueta) {
+    public String quitaSimbolo(String etiqueta) {
         if (etiqueta.contains("$")) {
             return etiqueta.split("\\$")[1];
         } else { //tiene #
@@ -388,21 +405,23 @@ public class Sistema {
         List<String[]> lFinal = new ArrayList<>();
         List<Columna> lColumnas;
         String[] res;
-        boolean flag;
+        boolean flag, flagK = true;
 
         for (int i = 0; i < lRegistro.size(); i++) {
             flag = true;
+            flagK = true;
             lColumnas = lRegistro.get(i).getList_columnas();
 
             for (int j = 0; j < lColumnas.size() && flag; j++) {
-                for (int k = 0; k < lResultado.size() && flag; k++) {
+                for (int k = 0; k < lResultado.size() && (flag || flagK); k++) {
                     res = lResultado.get(k);
 
                     if (lColumnas.get(j).getContenido().equals(res[0])) {
                         //guarda la posición y el grado de membresía
                         lFinal.add(new String[]{i + "", res[1]});
-                        flag = false;
+                        flagK = false;
                     }
+                    flag = false;
                 }
             }
         }
