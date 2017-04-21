@@ -426,7 +426,7 @@ public class Errores {
         if (!condicion.contains(" ")) {
             return false;
         }
-        
+
         objT.setTabid(chTablaExiste("select", parts[0].split("\\.")[0]));
         if (getDslerr() != 0) {
             System.out.println("Error cerca de la condicion where, la tabla no existe");
@@ -466,13 +466,13 @@ public class Errores {
                             return false;
                         }
                 }
-            break;
+                break;
             case ">":
             case "<":
             case ">=":
             case "<=":
                 try {
-                    String parts2[] = objG.obtenerRegistroByID("BD\\" + objBD.getNombre() + ".dbs\\columnas", (objC.getColid() - 1) ).split(" ");
+                    String parts2[] = objG.obtenerRegistroByID("BD\\" + objBD.getNombre() + ".dbs\\columnas", (objC.getColid() - 1)).split(" ");
                     if (!parts2[0].trim().equals("integer") && !parts2[0].trim().equals("double") && !parts2[0].trim().equals("float")) {
                         return false;
                     }
@@ -489,7 +489,7 @@ public class Errores {
 
         return true;
     }
-    
+
     /**
      * Checa los elementos necesarios para que una condición difusa sea
      * sintácticamente correcta.
@@ -528,7 +528,7 @@ public class Errores {
         if (parts.length != 3 && parts.length != 5) {
             return false; //la estructura de la condición es incorrecta
         }
-        
+
         if (!parts[0].contains(".")) { //verifica que se cumpla la estructura tabla.columna
             return false;
         }
@@ -561,7 +561,7 @@ public class Errores {
 
         //verifica que, si tiene #, éste venga acompañado de un número
         try {
-            if (parts[2].contains("\\#")) {
+            if (parts[2].contains("#")) {
                 parts2 = parts[2].split("\\#");
                 Double.parseDouble(parts2[1]); //solo es para comprobar
             } else {

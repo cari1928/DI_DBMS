@@ -1169,7 +1169,7 @@ public class Automatas {
         boolean bandera = false;
         if (posicion == 0) {
             registrosA = new ArrayList<>();
-            
+
             for (int i = 0; i < Lresultados.get(0).size(); i++) {
                 objRW = new resulWhere();
                 objRW.setPosicion(Integer.parseInt(Lresultados.get(0).get(i)[0]));
@@ -1223,37 +1223,37 @@ public class Automatas {
                         bandera = true;
                     }
                 }
-                
-                if(!bandera){
+
+                if (!bandera) {
                     objRW = registrosA.get(i);
                     registros.add(objRW);
                 }
             }
-            
+
             //Recorre ahora la estructura registrosCondicion... para agregar los que estan en registroCondicion y no estan en registroA...
             for (int i = 0; i < registrosCondicion.size(); i++) {
                 bandera = false;
-                
+
                 for (int j = 0; j < registrosA.size() && !bandera; j++) {
-                    if(Integer.parseInt(registrosCondicion.get(i)[0]) == registrosA.get(j).getPosicion()){
-                       bandera = true;
+                    if (Integer.parseInt(registrosCondicion.get(i)[0]) == registrosA.get(j).getPosicion()) {
+                        bandera = true;
                     }
                 }
-                if(!bandera){
-                        objRW = new resulWhere();
-                        objRW.setPosicion(Integer.parseInt(registrosCondicion.get(i)[0]));
-                        grados = objRW.prepararGrados(Lcondiciones.get((contB + 1)), registrosCondicion.get(i));
+                if (!bandera) {
+                    objRW = new resulWhere();
+                    objRW.setPosicion(Integer.parseInt(registrosCondicion.get(i)[0]));
+                    grados = objRW.prepararGrados(Lcondiciones.get((contB + 1)), registrosCondicion.get(i));
 
-                        if (grados != null) {
-                            objRW.getGradosPertenencia().add(grados);
-                        }
-                        registros.add(objRW);
-                        bandera = true;
+                    if (grados != null) {
+                        objRW.getGradosPertenencia().add(grados);
+                    }
+                    registros.add(objRW);
+                    bandera = true;
                 }
             }
-            
+
             registros = resTotCond(Lresultados, registros, (posicion + 1), (contB + 2));
-            
+
         }
 
         /*List<String[]> registrosA; //registros  Anterior
@@ -1413,9 +1413,6 @@ public class Automatas {
         String registro, type = "#";
         Double[] criticPoints;
 
-        //cuando se mande llamar, utilizar algo así:
-        //chCondicionDifusa("persona.edad fleq $joven", objTresultante);
-        //
         //OBTENCIÓN DEL UNIVERSO DE DISCURSO
         registro = objS.getUniverse(RUTA + "SED/" + partsCondition[0], partsCondition[2]); //CUIDADO, podría contener null
         objV.getObjU().setTable(partsCondition[0].split("\\.")[0]); //asigna nombre de la tabla
@@ -1427,7 +1424,6 @@ public class Automatas {
         if (criticPoints.length == 2) {
             type = "$";
         }
-        //Agrega la info del trapecio
         objV.createTrapezoids(
                 criticPoints[0] + " " + criticPoints[1], partsCondition, RUTA + "SED/" + partsCondition[0] + ".tmp");
 
@@ -1436,6 +1432,8 @@ public class Automatas {
 
         //Obtiene estructura final
         lResultado = objS.comparaRegistros(objTResultante, lResultado);
+
+        objG.deleteFile(RUTA + "SED/" + partsCondition[0] + ".tmp"); //ya no se necesita el archivo tmp
 
         return lResultado;
     }
