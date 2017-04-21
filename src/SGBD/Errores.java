@@ -69,7 +69,7 @@ public class Errores {
 
     public boolean chColumnaDifusa(int colid) {
         try {
-            String columna = objG.obtenerRegistroByID(RUTABD + "columnas", colid);
+            String columna = objG.obtenerRegistroByID(RUTABD + "columnas", (colid - 1));
             String parts[] = columna.split(" ");
             if (!parts[7].trim().equals("f")) {
                 return false;
@@ -83,7 +83,7 @@ public class Errores {
     public boolean chVariableLinguistica(String archivo, String etiqueta) {
         String parts[];
         try {
-            List<String> etiquetas = objG.leer(RUTABD + "\\SED\\" + archivo);
+            List<String> etiquetas = objG.leer(RUTABD + "SED\\" + archivo);
             for (int i = 0; i < etiquetas.size(); i++) {
                 parts = etiquetas.get(i).split(" ");
                 if (parts[3].equals(etiqueta)) {
@@ -403,7 +403,6 @@ public class Errores {
         }
 
         System.out.println("ERROR: " + dslerr + " " + accion + " " + metodo);
-        System.out.println("POSIBLE ERROR DE SINTAXIS");
     }
 
     public Tabla obtenerTabla(int tabid) {
@@ -419,6 +418,78 @@ public class Errores {
         return null;
     }
 
+    public boolean chCondDet(String condicion) {
+        String parts[] = condicion.split(" ");
+        Tabla objT = new Tabla();
+        double prueba;
+        Columna objC = new Columna();
+        if (!condicion.contains(" ")) {
+            return false;
+        }
+        
+        objT.setTabid(chTablaExiste("select", parts[0].split("\\.")[0]));
+        if (getDslerr() != 0) {
+            System.out.println("Error cerca de la condicion where, la tabla no existe");
+            return false;
+        }
+
+        objC.setColid(chColumnasExisten("select", parts[0].split("\\.")[1], objT.getTabid()));
+        if (getDslerr() != 0) {
+            System.out.println("Error cerca de la condicion where la columna no existe");
+            return false;
+        }
+
+        switch (parts[1]) {
+            case "=":
+                switch (parts[2].charAt(0)) {
+                    case '\'':
+
+                        if (parts[2].charAt((parts[2].length() - 1)) != '\'' || parts[2].length() - 1 == 0) {
+                            System.out.println("Error cerca de la condición where, sintaxis");
+                            return false;
+                        }
+                        try {
+                            String parts2[] = objG.obtenerRegistroByID("BD\\" + objBD.getNombre() + "\\columnas", objC.getColid()).split(" ");
+                            if (parts2[0].trim().equals("integer") || parts2[0].trim().equals("double") || parts2[0].trim().equals("float")) {
+                                System.out.println("Error cerca de la condicion where, la columna no es de tipo char");
+                                return false;
+                            }
+                        } catch (Exception e) {
+                        }
+                        break;
+
+                    default:
+                        try {
+                            prueba = Double.parseDouble(parts[2]);
+                        } catch (Exception e) {
+                            System.out.println("Falta mensaje de error ");
+                            return false;
+                        }
+                }
+            break;
+            case ">":
+            case "<":
+            case ">=":
+            case "<=":
+                try {
+                    String parts2[] = objG.obtenerRegistroByID("BD\\" + objBD.getNombre() + ".dbs\\columnas", (objC.getColid() - 1) ).split(" ");
+                    if (!parts2[0].trim().equals("integer") && !parts2[0].trim().equals("double") && !parts2[0].trim().equals("float")) {
+                        return false;
+                    }
+                    prueba = Double.parseDouble(parts[2]);
+                } catch (Exception e) {
+                    System.out.println("Error cerca de la condición where, el dato no es numerico y/o la columna no es de tipo numerico");
+                    return false;
+                }
+                break;
+            default:
+                System.out.println("Error cerca de la condición where, sintaxis");
+                return false;
+        }
+
+        return true;
+    }
+    
     /**
      * Checa los elementos necesarios para que una condición difusa sea
      * sintácticamente correcta.
@@ -457,17 +528,17 @@ public class Errores {
         if (parts.length != 3 && parts.length != 5) {
             return false; //la estructura de la condición es incorrecta
         }
-
+        
         if (!parts[0].contains(".")) { //verifica que se cumpla la estructura tabla.columna
             return false;
         }
 
-        tabid = chTablaExiste("condicionDifusa", parts[0].split(".")[1]);  //verifica si la tabla existe y regresa el id de la tabla
+        tabid = chTablaExiste("condicionDifusa", parts[0].split("\\.")[0]);  //verifica si la tabla existe y regresa el id de la tabla
         if (dslerr != 0) {
             return false;
         }
 
-        colid = chColumnasExisten("condicionDifusa", parts[0].split(".")[1], tabid);
+        colid = chColumnasExisten("condicionDifusa", parts[0].split("\\.")[1], tabid);
         if (dslerr != 0) {
             return false;
         }
@@ -477,8 +548,8 @@ public class Errores {
         }
 
         //NO TIENE LAS PALABRAS RESERVADAS
-        if (!parts[1].equals("FGEQ") // >=
-                && !parts[1].equals("FLEQ")) {//<=
+        if (!parts[1].equals("fgeq") // >=
+                && !parts[1].equals("fleq")) {//<=
             //&& !parts[1].equals("FEQ")) {//==
             return false;
         }
@@ -490,13 +561,13 @@ public class Errores {
 
         //verifica que, si tiene #, éste venga acompañado de un número
         try {
-            if (parts[2].contains("#")) {
-                parts2 = parts[2].split("#");
+            if (parts[2].contains("\\#")) {
+                parts2 = parts[2].split("\\#");
                 Double.parseDouble(parts2[1]); //solo es para comprobar
             } else {
                 //verificar que la etiqueta sea válida para la tabla seleccionada
-                parts2 = parts[2].split("$");
-                if (chVariableLinguistica(RUTABD + parts[0], parts2[1])) {
+                parts2 = parts[2].split("\\$");
+                if (!chVariableLinguistica(parts[0], parts2[1])) {
                     return false;
                 }
             }

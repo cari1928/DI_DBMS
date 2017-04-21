@@ -3,7 +3,6 @@ package SED;
 import java.io.IOException;
 import java.util.Scanner;
 import GestionSistema.GestionArchivos;
-import GestionSistema.Sistema;
 import SGBD.Automatas;
 
 /**
@@ -72,23 +71,23 @@ public class VariableEntrada {
      */
     public void askDiscourseUniverse(String registro) throws IOException {
         boolean flag;
-        String ruta = objA.getRUTA() + "SED/";
+        String ruta = objA.getRUTA() + "/SED/";
         String[] parts;
 
         if (registro == null) { //si el registro está vacío, comienza a llenarse
             registro = getRange(); //pide el rango de origen - fin del universo de discurso
             registro += " " + getUnits(); //pide las unidades 
             registro += " " + objU.getVariable();
-            //crea el archivo con el nombre de la objU.getVariable()
-            objG.escribir(ruta + objU.getTable() + "." + objU.getVariable(), 1, registro, "nuevo");
             flag = true;
         } else {//registro no es null entonces no está vacío
             parts = registro.split(" ");
             objU.setOrigen(Double.parseDouble(parts[0]));
             objU.setFin(Double.parseDouble(parts[1]));
-            objG.escribir(ruta + objU.getTable() + "." + objU.getVariable() + ".tmp", 1, registro, "nuevo");
             flag = false;
         }
+
+        //crea el archivo con el nombre de la objU.getVariable()
+        objG.escribir(ruta + objU.getTable() + "." + objU.getVariable() + ".tmp", 1, registro, "nuevo");
 
         if (flag) {
             //guarda el nombre de la objU.getVariable() en el archivo Datos
@@ -97,15 +96,8 @@ public class VariableEntrada {
     }
 
     public void createTrapezoids(String puntosC, String[] condition, String ruta) throws IOException {
-        Sistema objS = new Sistema();
         String[] partsPoints = puntosC.split(" ");
-        String registro, orientacion, etiqueta = objS.quitaSimbolo(condition[2]);
-        
-        if(condition[2].contains("$")) {
-            etiqueta = objS.quitaSimbolo(condition[2]);
-        } else {
-            etiqueta = "tmp";
-        }
+        String registro, orientacion;
 
         if (condition[1].equals("fleq")) {
             orientacion = "i"; //apertura hacia la izq
@@ -114,7 +106,7 @@ public class VariableEntrada {
             orientacion = "d"; //apertura hacia la der
         }
 
-        registro = "SemiTrapezoide " + partsPoints[0] + " " + orientacion + " " + etiqueta + " " + partsPoints[1] + " 0";
+        registro = "SemiTrapezoide " + partsPoints[0] + " " + orientacion + " " + condition[2].split("\\$")[1] + " " + partsPoints[1] + " 0";
         objG.escribir(ruta, 1, registro, "final");
     }
 
@@ -211,7 +203,6 @@ public class VariableEntrada {
                 //SemiTrapezoide
                 if (countShape == 1) {
                     flag = halfLeftTrapezoid(pc1); //verifica aspectos de un trapezoide a la izquierda
-                    objU.setOrigen(2 * objSemiT.getPuntoC()[0]);
                     orientacion = "i";
                 } else {
                     flag = halfRightTrapezoid(pc1); //verifica aspectos de un trapezoide a la derecha
@@ -223,10 +214,6 @@ public class VariableEntrada {
                     registro = "SemiTrapezoide " + objSemiT.getPuntoC()[0] + " " + orientacion + " "
                             + objSemiT.getEtiqueta() + " " + objU.getOrigen() + " 0";
                     objG.escribir(ruta, countShape, registro, "final");
-
-                    if (countShape == 1) {
-                        objU.setOrigen(0); //para que funcione con el semiT a la izq
-                    }
 
                     objSemiT.setAux(aux);
                     objSemiT.setOrigen(objU.getOrigen());

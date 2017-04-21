@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import GestionSistema.GestionArchivos;
 import GestionSistema.Sistema;
+import SED.MotorInferencia;
 import SED.VariableEntrada;
 import java.util.ArrayList;
 
@@ -794,7 +795,9 @@ public class Automatas {
      */
     private boolean chSelect() {
         String columnas[] = null, tablas[] = null, parts[], condiciones[] = null;
+        int res;
         Tabla objTresultante;
+        List<List<String[]>> Lresultados;
         error.chBdActiva("chSelect");
         if (error.getDslerr() != 0) {
             return false;
@@ -839,18 +842,16 @@ public class Automatas {
         obtener_todos_registros(tablas, 0);
         objTresultante = obtener_tabla_resultante(tablas, 0, new Tabla());
 
-        //checar si objTresultante está vacío
-        try {
-            //PARA PRUEBAS
-            //chCondicionDifusa("persona.edad fgeq $joven", objTresultante);
-            chCondicionDifusa("horario.tiempo fgeq #5", objTresultante);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-
         if (query.contains(" where ")) { // Si hay condiciones...
             LselecCond = new ArrayList<>(); //guarda las condiciones a mostrar al usuario
             tratado_condiciones(query.split(" where ")[1]); //Gurda todas las condiciones que tiene en una lista de String la forma en como guarda es condicion y operafor logico la siguiente condicion asi sucesivamente
+
+            Lresultados = verificarCondiciones(objTresultante);
+            if (Lresultados == null) {
+                return false;
+            }
+
+            resTotCond(Lresultados);
 
         } else {
             imprimeResultado(columnas, tablas);
@@ -993,6 +994,10 @@ public class Automatas {
 
         for (int i = 0; i < NomCol.length; i++) {
             nombre += NomCol[i] + "";
+            if (nombre.contains(" ")) {
+                nombre = nombre.split(" ")[0];
+                i = NomCol.length;
+            }
         }
 
         return nombre;
@@ -1061,7 +1066,7 @@ public class Automatas {
             Lcondiciones.add(condiciones);
         } else {
             String nueva_condiciones = "";
-            if (and < or || (and != -1 && or == -1)) {
+            if (and < or && (and != -1)) {
                 for (int j = 0; j < condiciones.length(); j++) {
                     if (j < and) {
                         nueva_condiciones += condiciones.charAt(j);
@@ -1077,166 +1082,222 @@ public class Automatas {
                 }
                 tratado_condiciones(nueva_condiciones);
             } else {
-                if (or < and || (or != -1 && and == -1)) {
-                    or = condiciones.indexOf(" or ");
-                    for (int j = 0; j < condiciones.length(); j++) {
-                        if (j < or) {
-                            nueva_condiciones += condiciones.charAt(j);
-                            if (j == (or - 1)) {
-                                Lcondiciones.add(nueva_condiciones);
-                                Lcondiciones.add("or");
-                                nueva_condiciones = "";
-                                j = (or + 3);
-                            }
-                        } else {
-                            nueva_condiciones += condiciones.charAt(j);
+                //if (or < and && (or != -1 && and == -1)) {
+                //or = condiciones.indexOf(" or ");
+                for (int j = 0; j < condiciones.length(); j++) {
+                    if (j < or) {
+                        nueva_condiciones += condiciones.charAt(j);
+                        if (j == (or - 1)) {
+                            Lcondiciones.add(nueva_condiciones);
+                            Lcondiciones.add("or");
+                            nueva_condiciones = "";
+                            j = (or + 3);
                         }
+                    } else {
+                        nueva_condiciones += condiciones.charAt(j);
                     }
-                    tratado_condiciones(nueva_condiciones);
                 }
+                tratado_condiciones(nueva_condiciones);
+                //}
             }
         }
 
     }
 
-    private Tabla evaluaCondDet(String condicion) {
-        String parts[] = condicion.split(" ");
-        Tabla objT = new Tabla();
-        double prueba;
-        Columna objC = new Columna();
-        if (!condicion.contains(" ")) {
-            return null;
-        }
-
-        objT.setTabid(error.chTablaExiste("select", parts[0].split(".")[0]));
-        if (error.getDslerr() != -1) {
-            System.out.println("Error cerca de la condicion where, la tabla no existe");
-            return null;
-        }
-
-        objC.setColid(error.chColumnasExisten("select", parts[0].split(".")[1], objT.getTabid()));
-        System.out.println("Error cerca de la condicion where la columna no existe");
-        if (error.getDslerr() != -1) {
-            return null;
-        }
-
-        switch (parts[1]) {
-            case "=":
-                switch (parts[2].charAt(0)) {
+    private List<List<String[]>> verificarCondiciones(Tabla objTresultante) {
+        List<List<String[]>> Lresultados = new ArrayList<>();
+        boolean aux, bandera = true;
+        for (int i = 0; i < Lcondiciones.size(); i++) {
+            try {
+                switch (Lcondiciones.get(i).split(" ")[1].charAt(0)) {
                     case '\'':
-
-                        if (parts[2].charAt((parts[2].length() - 1)) != '\'' || parts[2].length() - 1 == 0) {
-                            System.out.println("Error cerca de la condición where, sintaxis");
+                    case '=':
+                    case '<':
+                    case '>':
+                        if (!error.chCondDet(Lcondiciones.get(i))) {
+                            error.setDslerr(100);
                             return null;
                         }
-                        try {
-                            String parts2[] = objG.obtenerRegistroByID("BD\\" + objBD.getNombre() + "\\columnas", objC.getColid()).split(" ");
-                            if (parts2[0].trim().equals("integer") || parts2[0].trim().equals("double") || parts2[0].trim().equals("float")) {
-                                System.out.println("Error cerca de la condicion where, la columna no es de tipo char");
-                                return null;
-                            }
-                        } catch (Exception e) {
-                        }
+                        Lresultados.add(chCondicionDeterminista(Lcondiciones.get(i), objTresultante));
                         break;
-
                     default:
-                        try {
-                            prueba = Double.parseDouble(parts[2]);
-                        } catch (Exception e) {
-                            System.out.println("Falta mensaje de error ");
+                        if (!error.chCondDifusa(Lcondiciones.get(i))) {
+                            System.out.println("Error sintactico dentro de la condicion where difusa");
+                            error.setDslerr(100);
                             return null;
                         }
+                        Lresultados.add(chCondicionDifusa(Lcondiciones.get(i), objTresultante));
                 }
-            case ">":
-            case "<":
-            case ">=":
-            case "<=":
-                try {
-                    String parts2[] = objG.obtenerRegistroByID("BD\\" + objBD.getNombre() + "\\columnas", objC.getColid()).split(" ");
-                    if (!parts2[0].trim().equals("integer") || !parts2[0].trim().equals("double") || !parts2[0].trim().equals("float")) {
-                        return null;
-                    }
-                    prueba = Double.parseDouble(parts[2]);
-                } catch (Exception e) {
-                    System.out.println("Error cerca de la condición where, el dato no es numerico y/o la columna no es de tipo numerico");
-                    return null;
-                }
-                break;
-            default:
-                System.out.println("Error cerca de la condición where, sintaxis");
-                return null;
-        }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        return objT;
+            if (Lresultados.get((Lresultados.size() - 1)).size() != 0) {
+                aux = true;
+            } else {
+                aux = false;
+            }
+            i++;
+
+            if ((i - 1) == 0) {
+                bandera = aux;
+            } else if (((i - 1) % 2) == 0) {
+
+                if (Lcondiciones.get(i - 2).equals("and")) {
+                    bandera &= aux;
+                } else {
+                    bandera |= aux;
+                }
+            }
+
+        }
+        if (bandera) {
+            return Lresultados;
+        } else {
+            return null;
+        }
     }
 
-    private Tabla chCondicionDeterminista(String condicion, Tabla objT) {
-        Tabla objTR = new Tabla();
-        List<String> registros, columnas;
-        String parts[];
-        String parts1[] = condicion.split(" ");
-        String parts2[];
-        Registro objR;
+    private List<String[]> resTotCond(List<List<String[]>> Lresultados) { //Obtiene el resultado total de las condiciones :3 
+
+        List<String[]> registrosA; //registros  Anterior
+        List<String[]> registros = new ArrayList<>(); //registros
+        List<String[]> registrosCondicion; //Posicion (i)
+        int contB = 1; //obtiene las posiciones de los operadores logicos dentro de la estructura Lcondiciones.
+        int posicion = 0;
         boolean bandera = false;
-        int cont = 0;
-        try {
-            registros = objG.leer("BD\\" + objBD.getNombre() + "\\" + objT.getNombtab());
-            columnas = objG.leer("BD\\" + objBD.getNombre() + "\\columnas");
-            for (int i = 0; i < columnas.size(); i++) {
-                parts2 = columnas.get(i).split(" ");
-                if (parts2[2].trim().equals(objT.getTabid())) {
-                    cont++;
-                    if (parts2[4].trim().equals(parts1[0])) {
-                        i = columnas.size();
+        registrosA = Lresultados.get(0);
+        registros = igualar_registros(registrosA);
+
+        for (int i = 1; i < Lresultados.size(); i++) {
+            registrosCondicion = Lresultados.get(i);
+            if (Lcondiciones.get(contB).equals("and")) {
+                if (registrosA.size() > 0 && registrosCondicion.size() > 0) { //Si la lista tiene registros... //μ
+                    try {
+                        for (int j = 0; j < registrosA.size(); j++) {
+
+                            for (int k = 0; k < registrosCondicion.size() && !bandera; k++) {
+                                if (registrosA.get(j)[0].equals(registrosCondicion.get(k)[0])) {
+                                    bandera = true;
+                                    posicion = k;
+                                }
+                            }
+                            if (bandera) {
+                                if (!registrosCondicion.get(posicion)[1].equals("")) {
+                                    registros.get(j)[0] = (registrosCondicion.get(posicion)[0]);
+                                    registros.get(j)[1] = (registrosCondicion.get(posicion)[1]);
+                                    posicion = 0;
+                                }
+                                bandera = false;
+                            } else {
+                                registros.remove(j);
+                            }
+                        }
+                    } catch (Exception e) {
+                        
+                    }
+
+                }
+            } else { //si es un or
+                if (registrosA.isEmpty()) { //Si la lista tiene registros... //μ
+                    registros = registrosCondicion;
+                } else {
+                    for (int j = 0; j < registrosA.size(); j++) {
+
+                        for (int k = 0; k < registrosCondicion.size() && !bandera; k++) {
+                            if (registrosA.get(j)[0].equals(registrosCondicion.get(k)[0])) {
+                                posicion = k;
+                                bandera = true;
+                            }
+                        }
+                        if (!bandera) {
+                            registros.add(registrosCondicion.get(posicion));
+                            posicion = 0;
+                        } else {
+                            if (!registrosCondicion.get(posicion)[1].equals("")) {
+                                registros.get(j)[0] = registrosCondicion.get(posicion)[0];
+                                registros.get(j)[1] = registrosCondicion.get(posicion)[1];
+                                posicion = 0;
+                            }
+                            bandera = false;
+                        }
                     }
                 }
             }
-            if (registros.size() < 1) {
-                return null;
-            }
-
-            for (int i = 0; i < registros.size(); i++) {
-                parts = registros.get(i).split(" ");
-
-                switch (parts[1]) {
-                    case "=":
-                        if (parts[cont].trim().equals(parts[2])) {
-                            bandera = true;
-                        }
-                        break;
-                    case "<":
-                        if (Double.parseDouble(parts[cont]) < Double.parseDouble(parts[2])) {
-                            bandera = true;
-                        }
-                        break;
-                    case ">":
-                        if (Double.parseDouble(parts[cont]) > Double.parseDouble(parts[2])) {
-                            bandera = true;
-                        }
-                        break;
-                    case "<=":
-                        if (Double.parseDouble(parts[cont]) <= Double.parseDouble(parts[2])) {
-                            bandera = true;
-                        }
-                        break;
-                    case ">=":
-                        if (Double.parseDouble(parts[cont]) >= Double.parseDouble(parts[2])) {
-                            bandera = true;
-                        }
-                        break;
-                }
-                if (bandera) {
-                    objR = new Registro();
-                    objR.getList_columnas().add(new Columna());
-                    objR.getList_columnas().get(0).setNomcol(getChars(parts[1], 10));
-                    objR.getList_columnas().get(0).setContenido(parts[cont]);
-                    objTR.getListRegistro().add(objR);
-                    bandera = false;
-                }
-            }
-        } catch (Exception e) {
+            contB += 2;
+            registrosA = registros;
         }
-        return objTR;
+        return registros;
+    }
+
+    private List<String[]> igualar_registros(List<String[]> R) {
+        List<String[]> Rc = new ArrayList<>();
+        String[] info;
+        for (int i = 0; i < R.size(); i++) {
+            info = new String[2];
+            info[0] = R.get(i)[0];
+            info[1] = R.get(i)[1];
+            Rc.add(info);
+        }
+        return Rc;
+    }
+
+    private List<String[]> chCondicionDeterminista(String condicion, Tabla objTresultante) {
+        List<String[]> posiciones = new ArrayList<>();
+        Registro objR;
+        Columna objC;
+        boolean bandera = false;
+
+        for (int i = 0; i < objTresultante.getListRegistro().size(); i++) {
+            objR = objTresultante.getListRegistro().get(i);
+
+            for (int j = 0; j < objR.getList_columnas().size(); j++) {
+                objC = objR.getList_columnas().get(j);
+
+                if (objC.getNomtab().equals(condicion.split(" ")[0].split("\\.")[0].trim()) && obtenerNombresColumnas(objC.getNomcol()).equals(condicion.split(" ")[0].split("\\.")[1].trim())) {
+                    try {
+                        switch (condicion.split(" ")[1]) {
+                            case "=":
+                                if (objC.getContenido().trim().equals(condicion.split(" ")[2])) {
+                                    bandera = true;
+                                }
+                                break;
+                            case "<":
+                                if (Double.parseDouble(objC.getContenido()) < Double.parseDouble(condicion.split(" ")[2])) {
+                                    bandera = true;
+                                }
+                                break;
+                            case ">":
+                                if (Double.parseDouble(objC.getContenido()) > Double.parseDouble(condicion.split(" ")[2])) {
+                                    bandera = true;
+                                }
+                                break;
+                            case "<=":
+                                if (Double.parseDouble(objC.getContenido()) <= Double.parseDouble(condicion.split(" ")[2])) {
+                                    bandera = true;
+                                }
+                                break;
+                            case ">=":
+                                if (Double.parseDouble(objC.getContenido()) >= Double.parseDouble(condicion.split(" ")[2])) {
+                                    bandera = true;
+                                }
+                                break;
+                        }
+                    } catch (Exception e) {
+                    }
+
+                    //j = objR.getList_columnas().size();
+                    break;
+                }
+            }
+            if (bandera) {
+                String array[] = {i + "", ""};
+                posiciones.add(array);
+                bandera = false;
+            }
+        }
+
+        return posiciones;
     }
 
     //ANTES DE USAR ESTE MÉTODO, DEBE USARSE: error.chCondDifusa
@@ -1254,6 +1315,9 @@ public class Automatas {
         String registro, type = "#";
         Double[] criticPoints;
 
+        //cuando se mande llamar, utilizar algo así:
+        //chCondicionDifusa("persona.edad fleq $joven", objTresultante);
+        //
         //OBTENCIÓN DEL UNIVERSO DE DISCURSO
         registro = objS.getUniverse(RUTA + "SED/" + partsCondition[0], partsCondition[2]); //CUIDADO, podría contener null
         objV.getObjU().setTable(partsCondition[0].split("\\.")[0]); //asigna nombre de la tabla
@@ -1265,10 +1329,9 @@ public class Automatas {
         if (criticPoints.length == 2) {
             type = "$";
         }
+        //Agrega la info del trapecio
         objV.createTrapezoids(
                 criticPoints[0] + " " + criticPoints[1], partsCondition, RUTA + "SED/" + partsCondition[0] + ".tmp");
-
-        objS.showFile(RUTA + "SED/" + partsCondition[0] + ".tmp");
 
         //FUZZYFICATION
         lResultado = objS.fuzzyResult(RUTA, partsCondition, type);
@@ -1276,7 +1339,6 @@ public class Automatas {
         //Obtiene estructura final
         lResultado = objS.comparaRegistros(objTResultante, lResultado);
 
-        objG.deleteFile(RUTA + "SED/" + partsCondition[0] + ".tmp"); //ya no se necesita el archivo tmp
         return lResultado;
     }
 
