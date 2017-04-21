@@ -323,8 +323,10 @@ public class Sistema {
                             points[1] = points[0] + dist;
                         }
                     } else {
-                        points[0] = Double.parseDouble(parts[1]); //punto crítico más a la izq
                         //parts[1] == SemiTrapezoide
+
+                        //TODO, checar la orientación
+                        points[0] = Double.parseDouble(parts[1]); //punto crítico más a la izq
                         points[1] = Double.parseDouble(parts[4]);
                     }
                 } else {
@@ -341,6 +343,8 @@ public class Sistema {
                         }
                     } else {
                         //parts[1] == SemiTrapezoide
+
+                        //TODO, checar la orientación
                         points[0] = Double.parseDouble(parts[1]);
                         points[1] = Double.parseDouble(parts[4]);
                     }

@@ -843,7 +843,7 @@ public class Automatas {
         try {
             //PARA PRUEBAS
             //chCondicionDifusa("persona.edad fgeq $joven", objTresultante);
-            chCondicionDifusa("horario.tiempo fleq #100", objTresultante);
+            chCondicionDifusa("horario.tiempo fgeq #5", objTresultante);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
