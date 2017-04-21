@@ -16,6 +16,15 @@ public class Columna {
 
     private String contenido;
     private String nomtab;
+    private boolean difusa;
+
+    public boolean isDifusa() {
+        return difusa;
+    }
+
+    public void setDifusa(boolean difusa) {
+        this.difusa = difusa;
+    }
 
     public String getNomtab() {
         return nomtab;
@@ -24,7 +33,7 @@ public class Columna {
     public void setNomtab(String nomtab) {
         this.nomtab = nomtab;
     }
-    
+
     public String getContenido() {
         return contenido;
     }

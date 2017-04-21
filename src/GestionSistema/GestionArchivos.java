@@ -259,4 +259,9 @@ public class GestionArchivos {
         }
     }
 
+    public void deleteFile(String ruta) {
+        File file = new File(ruta);
+        file.delete();
+    }
+
 }

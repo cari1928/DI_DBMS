@@ -1194,7 +1194,7 @@ public class Automatas {
                             }
                         }
                     } catch (Exception e) {
-                        
+
                     }
 
                 }
@@ -1315,9 +1315,6 @@ public class Automatas {
         String registro, type = "#";
         Double[] criticPoints;
 
-        //cuando se mande llamar, utilizar algo así:
-        //chCondicionDifusa("persona.edad fleq $joven", objTresultante);
-        //
         //OBTENCIÓN DEL UNIVERSO DE DISCURSO
         registro = objS.getUniverse(RUTA + "SED/" + partsCondition[0], partsCondition[2]); //CUIDADO, podría contener null
         objV.getObjU().setTable(partsCondition[0].split("\\.")[0]); //asigna nombre de la tabla
@@ -1329,7 +1326,6 @@ public class Automatas {
         if (criticPoints.length == 2) {
             type = "$";
         }
-        //Agrega la info del trapecio
         objV.createTrapezoids(
                 criticPoints[0] + " " + criticPoints[1], partsCondition, RUTA + "SED/" + partsCondition[0] + ".tmp");
 
@@ -1338,6 +1334,8 @@ public class Automatas {
 
         //Obtiene estructura final
         lResultado = objS.comparaRegistros(objTResultante, lResultado);
+
+        objG.deleteFile(RUTA + "SED/" + partsCondition[0] + ".tmp"); //ya no se necesita el archivo tmp
 
         return lResultado;
     }
