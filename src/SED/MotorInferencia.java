@@ -34,7 +34,7 @@ public class MotorInferencia {
         if (listSemiTrapezoide != null) {
             for (SemiTrapezoide semiTrapezoide : listSemiTrapezoide) {
                 semiTrapezoide.membresiaY = calcularY(semiTrapezoide);
-                //resultado = semiTrapezoide.membresiaY + "";
+                resultado = semiTrapezoide.membresiaY + "";
             }
         }
         if (resultado.equals("")) {
@@ -132,11 +132,11 @@ public class MotorInferencia {
                     resultado = y + "";
                 } else {
                     //Esta en la linea Recta de 1's
-                    resultado = "1"; //y = 1
+                    resultado = 1 + ""; //y = 1
                 }
             } else {
                 //El punto no pertenece a la funcion
-                resultado = "0"; //y = 0
+                resultado = 0 + ""; //y = 0
             }
         } else {
             if (punto < objU.getFin() && punto > objSTrap.puntoI1[0]) {
@@ -145,14 +145,16 @@ public class MotorInferencia {
                     double p1[] = {objSTrap.puntoC[0], objSTrap.puntoC[1]};
                     double p2[] = {objSTrap.puntoI1[0], objSTrap.puntoI1[1]};
                     y = (punto - p1[0]) / (p2[0] - p1[0]) * (p2[1] - p1[1]) + (p1[1]);
-                    resultado = y + "";
+                    resultado += objSTrap.etiqueta + " Y = " + y + "\n";
                 } else {
                     //Esta en la linea recta de 1's
-                    resultado = "1"; //y = 1;
+                    y = 1;
+                    resultado += objSTrap.etiqueta + " Y = " + y + "\n";
                 }
             } else {
                 //El punto no pertenece a la funcion
-                resultado = "0"; //y = 0;
+                y = 0;
+                resultado += objSTrap.etiqueta + " Y = " + y + "\n";
             }
         }
         return y;

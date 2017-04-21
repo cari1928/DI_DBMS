@@ -561,7 +561,7 @@ public class Errores {
 
         //verifica que, si tiene #, éste venga acompañado de un número
         try {
-            if (parts[2].contains("#")) {
+            if (parts[2].contains("\\#")) {
                 parts2 = parts[2].split("\\#");
                 Double.parseDouble(parts2[1]); //solo es para comprobar
             } else {

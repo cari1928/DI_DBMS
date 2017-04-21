@@ -31,6 +31,7 @@ public class Gauss {
      */
     private double[][] fusionArrays(double[] array1, double[] array2) {
         double[][] tmp = new double[2][2 + 1]; //2 ecuaciones 3 elementos (X,Y,Constante)
+        //woow *-*, es para pasar el contenido de un arreglo unidimensional a un bidimensional
         //espero funcione XD
         System.arraycopy(array1, 0, tmp[0], 0, array1.length);
         System.arraycopy(array2, 0, tmp[1], 0, array2.length);
@@ -61,6 +62,8 @@ public class Gauss {
         ConvertZero();
         //Llevamos la cuenta de la iteración
         ++cont;
+        //Regresamos la matriz modificada
+        //return matriz;
     }
 
     /**

@@ -798,6 +798,7 @@ public class Automatas {
         int res;
         Tabla objTresultante;
         List<List<String[]>> Lresultados;
+        List<resulWhere> LregW;
         error.chBdActiva("chSelect");
         if (error.getDslerr() != 0) {
             return false;
@@ -851,8 +852,8 @@ public class Automatas {
                 return false;
             }
 
-            resTotCond(Lresultados);
-
+            LregW = resTotCond(Lresultados, null, 0, 1);
+            System.out.println("pausa");
         } else {
             imprimeResultado(columnas, tablas);
         }
@@ -1158,75 +1159,172 @@ public class Automatas {
         }
     }
 
-    private List<String[]> resTotCond(List<List<String[]>> Lresultados) { //Obtiene el resultado total de las condiciones :3 
+    private List<resulWhere> resTotCond(List<List<String[]>> Lresultados, List<resulWhere> registrosA, int posicion, int contB) { //Obtiene el resultado total de las condiciones :3 
 
-        List<String[]> registrosA; //registros  Anterior
-        List<String[]> registros = new ArrayList<>(); //registros
         List<String[]> registrosCondicion; //Posicion (i)
-        int contB = 1; //obtiene las posiciones de los operadores logicos dentro de la estructura Lcondiciones.
-        int posicion = 0;
+        List<resulWhere> registros = new ArrayList<>(); //registros
+        String[] grados;
+        int posAux;
+        resulWhere objRW;
         boolean bandera = false;
-        registrosA = Lresultados.get(0);
-        registros = igualar_registros(registrosA);
+        if (posicion == 0) {
+            registrosA = new ArrayList<>();
+            
+            for (int i = 0; i < Lresultados.get(0).size(); i++) {
+                objRW = new resulWhere();
+                objRW.setPosicion(Integer.parseInt(Lresultados.get(0).get(i)[0]));
+                grados = objRW.prepararGrados(Lcondiciones.get(0), Lresultados.get(0).get(i));
 
-        for (int i = 1; i < Lresultados.size(); i++) {
-            registrosCondicion = Lresultados.get(i);
-            if (Lcondiciones.get(contB).equals("and")) {
-                if (registrosA.size() > 0 && registrosCondicion.size() > 0) { //Si la lista tiene registros... //μ
-                    try {
-                        for (int j = 0; j < registrosA.size(); j++) {
-
-                            for (int k = 0; k < registrosCondicion.size() && !bandera; k++) {
-                                if (registrosA.get(j)[0].equals(registrosCondicion.get(k)[0])) {
-                                    bandera = true;
-                                    posicion = k;
-                                }
-                            }
-                            if (bandera) {
-                                if (!registrosCondicion.get(posicion)[1].equals("")) {
-                                    registros.get(j)[0] = (registrosCondicion.get(posicion)[0]);
-                                    registros.get(j)[1] = (registrosCondicion.get(posicion)[1]);
-                                    posicion = 0;
-                                }
-                                bandera = false;
-                            } else {
-                                registros.remove(j);
-                            }
-                        }
-                    } catch (Exception e) {
-
-                    }
-
+                if (grados != null) {
+                    objRW.getGradosPertenencia().add(grados);
                 }
-            } else { //si es un or
-                if (registrosA.isEmpty()) { //Si la lista tiene registros... //μ
-                    registros = registrosCondicion;
-                } else {
-                    for (int j = 0; j < registrosA.size(); j++) {
+                registrosA.add(objRW);
+            }
+            posicion++;
+        } else if (posicion >= Lresultados.size()) {
+            return registrosA;
+        }
 
-                        for (int k = 0; k < registrosCondicion.size() && !bandera; k++) {
-                            if (registrosA.get(j)[0].equals(registrosCondicion.get(k)[0])) {
-                                posicion = k;
-                                bandera = true;
-                            }
+        registrosCondicion = igualar_registros(Lresultados.get(posicion)); //obtiene todos los resultados 
+        if (Lcondiciones.get(contB).equals("and")) {
+            for (int i = 0; i < registrosA.size(); i++) {
+                bandera = false;
+
+                for (int j = 0; j < registrosCondicion.size() && !bandera; j++) {
+                    if (registrosA.get(i).getPosicion() == Integer.parseInt(registrosCondicion.get(j)[0])) {
+                        objRW = registrosA.get(i);
+                        grados = objRW.prepararGrados(Lcondiciones.get((contB + 1)), registrosCondicion.get(j));
+
+                        if (grados != null) {
+                            objRW.getGradosPertenencia().add(grados);
                         }
-                        if (!bandera) {
-                            registros.add(registrosCondicion.get(posicion));
-                            posicion = 0;
-                        } else {
-                            if (!registrosCondicion.get(posicion)[1].equals("")) {
-                                registros.get(j)[0] = registrosCondicion.get(posicion)[0];
-                                registros.get(j)[1] = registrosCondicion.get(posicion)[1];
-                                posicion = 0;
-                            }
-                            bandera = false;
-                        }
+                        registros.add(objRW);
+                        bandera = true;
                     }
                 }
             }
-            contB += 2;
-            registrosA = registros;
+
+            registros = resTotCond(Lresultados, registros, (posicion + 1), (contB + 2));
+
+        } else { //Es un or...
+            //Recorre primero estructura registros A y agrega todo lo que tenga A
+            for (int i = 0; i < registrosA.size(); i++) {
+                bandera = false;
+
+                for (int j = 0; j < registrosCondicion.size() && !bandera; j++) {
+                    if (registrosA.get(i).getPosicion() == Integer.parseInt(registrosCondicion.get(j)[0])) {
+                        objRW = registrosA.get(i);
+                        grados = objRW.prepararGrados(Lcondiciones.get((contB + 1)), registrosCondicion.get(j));
+
+                        if (grados != null) {
+                            objRW.getGradosPertenencia().add(grados);
+                        }
+                        registros.add(objRW);
+                        bandera = true;
+                    }
+                }
+                
+                if(!bandera){
+                    objRW = registrosA.get(i);
+                    registros.add(objRW);
+                }
+            }
+            
+            //Recorre ahora la estructura registrosCondicion... para agregar los que estan en registroCondicion y no estan en registroA...
+            for (int i = 0; i < registrosCondicion.size(); i++) {
+                bandera = false;
+                
+                for (int j = 0; j < registrosA.size() && !bandera; j++) {
+                    if(Integer.parseInt(registrosCondicion.get(i)[0]) == registrosA.get(j).getPosicion()){
+                       bandera = true;
+                    }
+                }
+                if(!bandera){
+                        objRW = new resulWhere();
+                        objRW.setPosicion(Integer.parseInt(registrosCondicion.get(i)[0]));
+                        grados = objRW.prepararGrados(Lcondiciones.get((contB + 1)), registrosCondicion.get(i));
+
+                        if (grados != null) {
+                            objRW.getGradosPertenencia().add(grados);
+                        }
+                        registros.add(objRW);
+                        bandera = true;
+                }
+            }
+            
+            registros = resTotCond(Lresultados, registros, (posicion + 1), (contB + 2));
+            
         }
+
+        /*List<String[]> registrosA; //registros  Anterior
+         List<String[]> registros = new ArrayList<>(); //registros
+        
+         int contB = 1; //obtiene las posiciones de los operadores logicos dentro de la estructura Lcondiciones.
+         int posicion = 0;
+         boolean bandera = false;
+         registrosA = Lresultados.get(0);
+         registros = igualar_registros(registrosA);
+
+         for (int i = 1; i < Lresultados.size(); i++) {
+         registrosCondicion = Lresultados.get(i);
+         if (Lcondiciones.get(contB).equals("and")) {
+         if (registrosA.size() > 0 && registrosCondicion.size() > 0) { //Si la lista tiene registros... //μ
+         try {
+         for (int j = 0; j < registrosA.size(); j++) {
+
+         for (int k = 0; k < registrosCondicion.size() && !bandera; k++) {
+         if (registrosA.get(j)[0].equals(registrosCondicion.get(k)[0])) {
+         bandera = true;
+         posicion = k;
+         }
+         }
+         if (bandera) {
+         if (!registrosCondicion.get(posicion)[1].equals("")) {
+         registros.get(j)[0] = (registrosCondicion.get(posicion)[0]);
+         registros.get(j)[1] = (registrosCondicion.get(posicion)[1]);
+         posicion = 0;
+         }
+         bandera = false;
+         } else {
+         registros.remove(j);
+         }
+         }
+         } catch (Exception e) {
+                        
+         }
+
+         }
+         } else { //si es un or
+         if (registrosA.isEmpty()) { //Si la lista tiene registros... //μ
+         registros = registrosCondicion;
+         } else {
+         for (int j = 0; j < registrosA.size(); j++) {
+
+         for (int k = 0; k < registrosCondicion.size() && !bandera; k++) {
+         if (registrosA.get(j)[0].equals(registrosCondicion.get(k)[0])) {
+         posicion = k;
+         bandera = true;
+         }
+         }
+         if (!bandera) {
+         registros.add(registrosCondicion.get(posicion));
+         posicion = 0;
+         } else {
+         if (!registrosCondicion.get(posicion)[1].equals("")) {
+         registros.get(j)[0] = registrosCondicion.get(posicion)[0];
+         registros.get(j)[1] = registrosCondicion.get(posicion)[1];
+         posicion = 0;
+         }
+         bandera = false;
+         }
+         }
+         }
+         }
+         contB += 2;
+         registrosA = registros;
+         }
+         return registros;
+         */
         return registros;
     }
 
@@ -1315,6 +1413,9 @@ public class Automatas {
         String registro, type = "#";
         Double[] criticPoints;
 
+        //cuando se mande llamar, utilizar algo así:
+        //chCondicionDifusa("persona.edad fleq $joven", objTresultante);
+        //
         //OBTENCIÓN DEL UNIVERSO DE DISCURSO
         registro = objS.getUniverse(RUTA + "SED/" + partsCondition[0], partsCondition[2]); //CUIDADO, podría contener null
         objV.getObjU().setTable(partsCondition[0].split("\\.")[0]); //asigna nombre de la tabla
@@ -1326,6 +1427,7 @@ public class Automatas {
         if (criticPoints.length == 2) {
             type = "$";
         }
+        //Agrega la info del trapecio
         objV.createTrapezoids(
                 criticPoints[0] + " " + criticPoints[1], partsCondition, RUTA + "SED/" + partsCondition[0] + ".tmp");
 
@@ -1334,8 +1436,6 @@ public class Automatas {
 
         //Obtiene estructura final
         lResultado = objS.comparaRegistros(objTResultante, lResultado);
-
-        objG.deleteFile(RUTA + "SED/" + partsCondition[0] + ".tmp"); //ya no se necesita el archivo tmp
 
         return lResultado;
     }
