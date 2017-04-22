@@ -9,24 +9,24 @@ import java.util.Scanner;
  * @author Tenistas
  */
 public class Principal {
-
+    
     private static Automatas objA;
     private static Scanner consola;
     private static String query;
-
+    
     public static void main(String[] args) {
         VariableEntrada objV;
-
+        
         consola = new Scanner(System.in);
         objA = new Automatas();
         mostrarBienvenida();
-
+        
         while (true) {
             System.out.print(">");
             query = pedirDatos();
             objA.setQuery(query);
             objA.iniAutomatas();
-
+            
             //verifica si hay que pedir variables de entrada
             if (objA.isVarEntrada()) {
                 try {
@@ -39,7 +39,7 @@ public class Principal {
             }
         }
     }
-
+    
     static void mostrarBienvenida() {
         System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
                 + "+                       HOLA BIENVENIDO                       +\n"
@@ -47,7 +47,7 @@ public class Principal {
                 + "+                          TENISFSQL                          +\n"
                 + "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
     }
-
+    
     static String pedirDatos() {
         return consola.nextLine();
     }

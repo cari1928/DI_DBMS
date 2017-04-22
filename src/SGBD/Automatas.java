@@ -26,8 +26,9 @@ public class Automatas {
     //PARA EL SELECT
     private List<String> Lcondiciones; //guarda condiciones y operadores lógicos
     private List<Tabla> Lregistros; //guarda todos los registros de todas las tablas
-    private List<Tabla> LselecCond; //guarda la info de los registros que cumplen todas las condiciones
+    //private List<Tabla> LselecCond; //guarda la info de los registros que cumplen todas las condiciones
     private Tabla LtabResAll; //guarda en una tabla todos los registros con toda la informacion de todas las tablas
+    private String columnas[];
 
     /**
      *
@@ -78,6 +79,7 @@ public class Automatas {
         } else if (chCrearReferencia()) {
             return true;
         } else if (chSelect()) {
+            imprimeResultadoFinal(columnas);
             return true;
         } else if (chInsert()) {
             return true;
@@ -795,11 +797,11 @@ public class Automatas {
      */
     private boolean chSelect() {
         String columnas[] = null, tablas[] = null, parts[], condiciones[] = null;
-        Tabla objTresultante;
+        int res;
+        //Tabla objTresultante;
         List<List<String[]>> Lresultados;
         List<resulWhere> LregW;
-
-        error.chBdActiva("select");
+        error.chBdActiva("chSelect");
         if (error.getDslerr() != 0) {
             return false;
         }
@@ -814,7 +816,7 @@ public class Automatas {
 
         if (!query.contains("*")) {
             //llena arreglo columnas
-            parts = query.split("select ")[0].split(" from"); //obtengo las columnas que se desean seleccionar
+            parts = query.split("select ")[1].split(" from"); //obtengo las columnas que se desean seleccionar
             if (parts[0].contains(", ")) {
                 //Tiene varias columnas seleccionadas...
                 columnas = parts[0].split(", ");
@@ -838,82 +840,142 @@ public class Automatas {
             tablas = new String[]{parts[0]};
         }
 
-        for (String tabla : tablas) {
-            error.chTablaExiste("select", tabla);
-            if (error.getDslerr() != 0) {
-                return false;
-            }
-        }
-
         //regresa todos los registros de las tablas fuera del where
         //Lregistros es llenado
         obtener_todos_registros(tablas, 0);
-        objTresultante = obtener_tabla_resultante(tablas, 0, new Tabla());
+        LtabResAll = obtener_tabla_resultante(tablas, 0, new Tabla());
 
         if (query.contains(" where ")) { // Si hay condiciones...
-            LselecCond = new ArrayList<>(); //guarda las condiciones a mostrar al usuario
+//            LselecCond = new ArrayList<>(); //guarda las condiciones a mostrar al usuario
             tratado_condiciones(query.split(" where ")[1]); //Gurda todas las condiciones que tiene en una lista de String la forma en como guarda es condicion y operafor logico la siguiente condicion asi sucesivamente
 
-            Lresultados = verificarCondiciones(objTresultante);
+            Lresultados = verificarCondiciones();
             if (Lresultados == null) {
                 return false;
             }
 
             LregW = resTotCond(Lresultados, null, 0, 1);
-            System.out.println("pausa");
-        } else {
-            imprimeResultado(columnas, tablas);
+            preparaLtabResAll(LregW);
         }
 
+        this.columnas = columnas;
         return true;
     }
 
-    private void imprimeResultado(String[] columnas, String[] tablas) {
-        String resultado = "| ";
-        Tabla objT;
-        List<Columna> listC;
+    void preparaLtabResAll(List<resulWhere> LregW) {
+        boolean coincidencia;
+        int pos = 0;
+        String NomCol;
+        for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
+            coincidencia = false;
 
-        if (columnas == null) {
-            for (int i = 0; i < Lregistros.size(); i++) {
-                objT = Lregistros.get(i);
-
-                for (int j = 0; j < objT.getListRegistro().size(); j++) {
-                    listC = objT.getListRegistro().get(j).getList_columnas();
-
-                    for (int k = 0; k < listC.size(); k++) {
-                        if (k == (listC.size() - 1)) {
-                            resultado += listC.get(k).getContenido();
-                        } else {
-                            resultado += listC.get(k).getContenido() + " | ";
-                        }
-                    }
-                    System.out.println(resultado);
-                    resultado = "| ";
+            for (int j = 0; j < LregW.size() && !coincidencia; j++) {
+                if (i == LregW.get(j).getPosicion()) {
+                    coincidencia = true;
+                    pos = j;
                 }
             }
-        } else {
-            for (int i = 0; i < columnas.length; i++) {
+            if (!coincidencia) { //Si no coincidieron se elimina y ya
+                LtabResAll.getListRegistro().remove(i); //Se eliminan los registros que no fueron aceptados en la condicion
+            } else { //si si coincidieron se verifique si tiene grados de pertenencia y si si se agregan las columnas que se encontraron
+                if (!LregW.get(pos).getGradosPertenencia().isEmpty()) {
+                    agregarColumna(LregW.get(pos).getGradosPertenencia());
 
-                for (int j = 0; j < Lregistros.size(); j++) {
-                    objT = Lregistros.get(j);
+                    for (int j = 0; j < LtabResAll.getListRegistro().get(i).list_columnas.size(); j++) {
 
-                    if (objT.getNombtab().equals(columnas[i].split(".")[0])) {
-
-                        for (int k = 0; k < objT.getListRegistro().size(); k++) {
-                            listC = objT.getListRegistro().get(k).getList_columnas();
-
-                            for (int l = 0; l < listC.size(); l++) {
-                                if (l == (listC.size() - 1)) {
-                                    resultado += listC.get(l).getContenido();
-                                } else {
-                                    resultado += listC.get(l).getContenido() + " | ";
-                                }
+                        for (int k = 0; k < LregW.get(pos).getGradosPertenencia().size(); k++) {
+                            NomCol = LtabResAll.getListRegistro().get(i).list_columnas.get(j).getNomtab() + "." + obtenerNombresColumnas(LtabResAll.getListRegistro().get(i).list_columnas.get(j).getNomcol());
+                            if (NomCol.equals(LregW.get(pos).getGradosPertenencia().get(k)[0]) && LtabResAll.getListRegistro().get(i).list_columnas.get(j).getDifusa()) {
+                                LtabResAll.getListRegistro().get(i).list_columnas.get(j).setContenido(LregW.get(pos).getGradosPertenencia().get(k)[1]);
                             }
-                            System.out.println(resultado);
-                            resultado = "| ";
                         }
                     }
                 }
+            }
+        }
+    }
+
+    void agregarColumna(List<String[]> columnas) {
+        String nombreCol;
+        Columna objC;
+        boolean bandera = false;
+        for (int i = 0; i < columnas.size(); i++) {
+            nombreCol = columnas.get(i)[0];
+            bandera = false;
+
+            for (int j = 0; j < LtabResAll.getListRegistro().get(0).list_columnas.size() && !bandera; j++) {
+                if (nombreCol.equals(LtabResAll.getListRegistro().get(i).list_columnas.get(j).getNomtab() + "." + obtenerNombresColumnas(LtabResAll.getListRegistro().get(i).list_columnas.get(j).getNomcol())) && LtabResAll.getListRegistro().get(i).list_columnas.get(j).getDifusa()) {
+                    bandera = true;
+                }
+            }
+            if (!bandera) {
+                for (int j = 0; j < LtabResAll.getListRegistro().size(); j++) {
+                    objC = new Columna();
+                    objC.setNomtab(nombreCol.split("\\.")[0]);
+                    objC.setNomcol(getChars(nombreCol.split("\\.")[1], 10));
+                    objC.setDifusa(true);
+                    LtabResAll.getListRegistro().get(j).getList_columnas().add(objC);
+                }
+            }
+        }
+    }
+
+    private void imprimeResultadoFinal(String[] columnas) {
+        String resultado = "| ";
+        Registro objR;
+        Columna objC;
+
+        if (columnas != null) {
+
+            for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
+                objC = LtabResAll.getListRegistro().get(0).getList_columnas().get(i);
+                if (objC.getDifusa()) {
+                    resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + "|";
+                } else {
+                    for (int j = 0; j < columnas.length; j++) {
+                        if (columnas[j].equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
+                            resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + "|";
+                        }
+                    }
+                }
+            }
+            System.out.println(resultado);
+            resultado = "| ";
+            
+            for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
+                objR = LtabResAll.getListRegistro().get(i);
+
+                for (int j = 0; j < objR.getList_columnas().size(); j++) {
+                    objC = objR.getList_columnas().get(j);
+                    if (objC.getDifusa()) {
+                        resultado += objC.getContenido() + " | ";
+                    } else {
+                        for (int k = 0; k < columnas.length; k++) {
+                            if (columnas[k].equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
+                                resultado += objC.getContenido() + " | ";
+                            }
+                        }
+                    }
+                }
+                System.out.println(resultado);
+                resultado = "| ";
+            }
+        } else {
+            for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
+                resultado += LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomtab() + "." + obtenerNombresColumnas(LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomcol()) + "|";
+            }
+            System.out.println(resultado);
+            resultado = "";
+            for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
+                objR = LtabResAll.getListRegistro().get(i);
+
+                for (int j = 0; j < objR.getList_columnas().size(); j++) {
+                    objC = objR.getList_columnas().get(j);
+                    resultado += objC.getContenido() + " | ";
+                }
+
+                System.out.println(resultado);
+                resultado = "| ";
             }
         }
     }
@@ -1112,7 +1174,7 @@ public class Automatas {
 
     }
 
-    private List<List<String[]>> verificarCondiciones(Tabla objTresultante) {
+    private List<List<String[]>> verificarCondiciones() {
         List<List<String[]>> Lresultados = new ArrayList<>();
         boolean aux, bandera = true;
         for (int i = 0; i < Lcondiciones.size(); i++) {
@@ -1126,7 +1188,7 @@ public class Automatas {
                             error.setDslerr(100);
                             return null;
                         }
-                        Lresultados.add(chCondicionDeterminista(Lcondiciones.get(i), objTresultante));
+                        Lresultados.add(chCondicionDeterminista(Lcondiciones.get(i), LtabResAll));
                         break;
                     default:
                         if (!error.chCondDifusa(Lcondiciones.get(i))) {
@@ -1134,7 +1196,7 @@ public class Automatas {
                             error.setDslerr(100);
                             return null;
                         }
-                        Lresultados.add(chCondicionDifusa(Lcondiciones.get(i), objTresultante));
+                        Lresultados.add(chCondicionDifusa(Lcondiciones.get(i), LtabResAll));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1166,8 +1228,8 @@ public class Automatas {
         }
     }
 
-    //Obtiene el resultado total de las condiciones
-    private List<resulWhere> resTotCond(List<List<String[]>> Lresultados, List<resulWhere> registrosA, int posicion, int contB) {
+    private List<resulWhere> resTotCond(List<List<String[]>> Lresultados, List<resulWhere> registrosA, int posicion, int contB) { //Obtiene el resultado total de las condiciones :3 
+
         List<String[]> registrosCondicion; //Posicion (i)
         List<resulWhere> registros = new ArrayList<>(); //registros
         String[] grados;
@@ -1188,7 +1250,9 @@ public class Automatas {
                 registrosA.add(objRW);
             }
             posicion++;
-        } else if (posicion >= Lresultados.size()) {
+        }
+
+        if (posicion >= Lresultados.size()) {
             return registrosA;
         }
 

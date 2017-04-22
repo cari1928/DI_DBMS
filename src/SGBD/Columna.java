@@ -16,9 +16,9 @@ public class Columna {
 
     private String contenido;
     private String nomtab;
-    private boolean difusa;
+    private boolean difusa = false;
 
-    public boolean isDifusa() {
+    public boolean getDifusa() {
         return difusa;
     }
 
