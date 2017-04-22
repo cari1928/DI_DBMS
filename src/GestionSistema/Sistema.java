@@ -108,7 +108,22 @@ public class Sistema {
         } else {
             //partsCondition[2] == #
             criticPoints[0] = Double.parseDouble(partsCondition[2].split("#")[1]); //obtiene el valor a lado del #
-            criticPoints[1] = 2 * criticPoints[0];
+            if (partsCondition[1].equals("fleq")) {
+                criticPoints[1] = 2 * criticPoints[0];
+            } else {
+                listR = objG.leer(ruta);
+                for (String r : listR) {
+                    if (r.split(" ").length == 4) {
+                        //universo de discurso
+                        origen = Double.parseDouble(r.split(" ")[0]);
+                        fin = Double.parseDouble(r.split(" ")[1]);
+                        break;
+                    }
+                }
+                tmpDistance = fin - criticPoints[0];
+                criticPoints[1] = criticPoints[0] - tmpDistance;
+            }
+
             return criticPoints;
         }
 
@@ -304,7 +319,7 @@ public class Sistema {
     private double[] getPointsTrap(String[] partsCondition, String rEtiqueta, List<String> lTrap, String ind) {
         double[] points = null;
         String[] parts;
-        double dist;
+        double dist, origen = 0, fin = 0;
 
         for (String r : lTrap) {
             if (r.contains(rEtiqueta)) {
@@ -344,12 +359,25 @@ public class Sistema {
                     } else {
                         //parts[1] == SemiTrapezoide
 
-                        //TODO, checar la orientación
-                        points[0] = Double.parseDouble(parts[1]);
-                        points[1] = Double.parseDouble(parts[4]);
+                        //TODO, hace falta checar esto mismo para el caso fleq
+                        if (ind != null) {
+                            if (parts[2].equals("i")) {
+                                points[0] = points[1] = origen;
+                            } else {
+                                //parts[2] == d
+                                points[0] = points[1] = fin;
+                            }
+                        } else {
+                            points[0] = Double.parseDouble(parts[1]);
+                            points[1] = Double.parseDouble(parts[4]);
+                        }
                     }
                 }
                 return points;
+            } else if (r.split(" ").length == 4) {
+                parts = r.split(" ");
+                origen = Double.parseDouble(parts[0]);
+                fin = Double.parseDouble(parts[1]);
             }
         }
         return points;
