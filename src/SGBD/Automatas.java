@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import GestionSistema.GestionArchivos;
 import GestionSistema.Sistema;
-import SED.MotorInferencia;
 import SED.VariableEntrada;
 import java.util.ArrayList;
 
@@ -14,8 +13,6 @@ import java.util.ArrayList;
  */
 public class Automatas {
 
-    //TENER EN CUENTA
-    //LOS MÉTODOS PRINCIPALES SON AQUELLOS CUYOS NOMBRES ESTÁN EN ESPAÑOL
     private final Errores error;
     private final GestionArchivos objG;
     private final BaseDatos objBD;
@@ -26,13 +23,9 @@ public class Automatas {
     //PARA EL SELECT
     private List<String> Lcondiciones; //guarda condiciones y operadores lógicos
     private List<Tabla> Lregistros; //guarda todos los registros de todas las tablas
-    //private List<Tabla> LselecCond; //guarda la info de los registros que cumplen todas las condiciones
     private Tabla LtabResAll; //guarda en una tabla todos los registros con toda la informacion de todas las tablas
     private String columnas[];
 
-    /**
-     *
-     */
     public Automatas() {
         objBD = new BaseDatos();
         objG = new GestionArchivos();
@@ -60,10 +53,6 @@ public class Automatas {
         return RUTA;
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean iniAutomatas() {
         error.setDslerr(0); //para futuras ejecuciones
 
@@ -796,12 +785,12 @@ public class Automatas {
      * @return
      */
     private boolean chSelect() {
-        String columnas[] = null, tablas[] = null, parts[], condiciones[] = null;
-        int res;
+        String pColumnas[] = null, tablas[] = null, parts[], condiciones[] = null;
         //Tabla objTresultante;
         List<List<String[]>> Lresultados;
         List<resulWhere> LregW;
-        error.chBdActiva("chSelect");
+
+        error.chBdActiva("select");
         if (error.getDslerr() != 0) {
             return false;
         }
@@ -819,10 +808,10 @@ public class Automatas {
             parts = query.split("select ")[1].split(" from"); //obtengo las columnas que se desean seleccionar
             if (parts[0].contains(", ")) {
                 //Tiene varias columnas seleccionadas...
-                columnas = parts[0].split(", ");
+                pColumnas = parts[0].split(", ");
             } else {
                 //Tiene solo una columna seleccionada...
-                columnas = new String[]{parts[0]};
+                pColumnas = new String[]{parts[0]};
             }
         }
         //Si no se indico ninguna columna la variable columnas estara en null.
@@ -840,9 +829,15 @@ public class Automatas {
             tablas = new String[]{parts[0]};
         }
 
+        for (String tabla : tablas) {
+            error.chTablaExiste("select", tabla);
+            if (error.getDslerr() != 0) {
+                return false;
+            }
+        }
+
         //regresa todos los registros de las tablas fuera del where
-        //Lregistros es llenado
-        obtener_todos_registros(tablas, 0);
+        obtener_todos_registros(tablas, 0); //Lregistros es llenado
         LtabResAll = obtener_tabla_resultante(tablas, 0, new Tabla());
 
         if (query.contains(" where ")) { // Si hay condiciones...
@@ -858,7 +853,7 @@ public class Automatas {
             preparaLtabResAll(LregW);
         }
 
-        this.columnas = columnas;
+        this.columnas = pColumnas;
         return true;
     }
 
@@ -921,27 +916,29 @@ public class Automatas {
     }
 
     private void imprimeResultadoFinal(String[] columnas) {
-        String resultado = "| ";
+        Sistema objS = new Sistema();
+        String resultado = "| ", espacios;
+        String[] parts;
         Registro objR;
         Columna objC;
 
         if (columnas != null) {
-
             for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
                 objC = LtabResAll.getListRegistro().get(0).getList_columnas().get(i);
+
                 if (objC.getDifusa()) {
-                    resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + "|";
+                    resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + " | ";
                 } else {
-                    for (int j = 0; j < columnas.length; j++) {
-                        if (columnas[j].equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
-                            resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + "|";
+                    for (String columna : columnas) {
+                        if (columna.equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
+                            resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + " | ";
                         }
                     }
                 }
             }
             System.out.println(resultado);
-            resultado = "| ";
-            
+            resultado = " | ";
+
             for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
                 objR = LtabResAll.getListRegistro().get(i);
 
@@ -950,32 +947,36 @@ public class Automatas {
                     if (objC.getDifusa()) {
                         resultado += objC.getContenido() + " | ";
                     } else {
-                        for (int k = 0; k < columnas.length; k++) {
-                            if (columnas[k].equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
+                        for (String columna : columnas) {
+                            if (columna.equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
                                 resultado += objC.getContenido() + " | ";
                             }
                         }
                     }
                 }
                 System.out.println(resultado);
-                resultado = "| ";
+                resultado = " | ";
             }
         } else {
             for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
-                resultado += LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomtab() + "." + obtenerNombresColumnas(LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomcol()) + "|";
+                resultado += LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomtab()
+                        + "."
+                        + obtenerNombresColumnas(LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomcol());
+                System.out.printf("%-20s | ", resultado);
+                resultado = "";
             }
-            System.out.println(resultado);
-            resultado = "";
-            for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
-                objR = LtabResAll.getListRegistro().get(i);
+            System.out.println();
 
+            for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
+                resultado = "| ";
+                objR = LtabResAll.getListRegistro().get(i);
                 for (int j = 0; j < objR.getList_columnas().size(); j++) {
                     objC = objR.getList_columnas().get(j);
-                    resultado += objC.getContenido() + " | ";
+                    resultado += objC.getContenido();
+                    System.out.printf("%-20s | ", resultado.trim()); //no sé porque, pero necesita el .trim 
+                    resultado = "";
                 }
-
-                System.out.println(resultado);
-                resultado = "| ";
+                System.out.println();
             }
         }
     }
