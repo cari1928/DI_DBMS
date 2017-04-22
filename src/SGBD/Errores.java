@@ -400,6 +400,18 @@ public class Errores {
                         break;
                 }
                 break;
+                
+            case "select":
+                switch(metodo) {
+                    case "chBdActiva":
+                        dslerr = 900;
+                        break;
+                        
+                    case "chTablaExiste":
+                        dslerr = 901;
+                        break;
+                }
+                break;
         }
 
         System.out.println("ERROR: " + dslerr + " " + accion + " " + metodo);

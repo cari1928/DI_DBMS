@@ -795,11 +795,11 @@ public class Automatas {
      */
     private boolean chSelect() {
         String columnas[] = null, tablas[] = null, parts[], condiciones[] = null;
-        int res;
         Tabla objTresultante;
         List<List<String[]>> Lresultados;
         List<resulWhere> LregW;
-        error.chBdActiva("chSelect");
+
+        error.chBdActiva("select");
         if (error.getDslerr() != 0) {
             return false;
         }
@@ -836,6 +836,13 @@ public class Automatas {
         } else {
             //Tiene solo una tabla a la que se hace referencia
             tablas = new String[]{parts[0]};
+        }
+
+        for (String tabla : tablas) {
+            error.chTablaExiste("select", tabla);
+            if (error.getDslerr() != 0) {
+                return false;
+            }
         }
 
         //regresa todos los registros de las tablas fuera del where
@@ -1159,8 +1166,8 @@ public class Automatas {
         }
     }
 
-    private List<resulWhere> resTotCond(List<List<String[]>> Lresultados, List<resulWhere> registrosA, int posicion, int contB) { //Obtiene el resultado total de las condiciones :3 
-
+    //Obtiene el resultado total de las condiciones
+    private List<resulWhere> resTotCond(List<List<String[]>> Lresultados, List<resulWhere> registrosA, int posicion, int contB) {
         List<String[]> registrosCondicion; //Posicion (i)
         List<resulWhere> registros = new ArrayList<>(); //registros
         String[] grados;
