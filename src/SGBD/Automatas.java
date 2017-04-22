@@ -872,6 +872,10 @@ public class Automatas {
             }
             if (!coincidencia) { //Si no coincidieron se elimina y ya
                 LtabResAll.getListRegistro().remove(i); //Se eliminan los registros que no fueron aceptados en la condicion
+                i--;
+                for (int j = 0; j < LregW.size(); j++) {
+                    LregW.get(j).setPosicion((LregW.get(j).getPosicion() - 1));
+                }
             } else { //si si coincidieron se verifique si tiene grados de pertenencia y si si se agregan las columnas que se encontraron
                 if (!LregW.get(pos).getGradosPertenencia().isEmpty()) {
                     agregarColumna(LregW.get(pos).getGradosPertenencia());
