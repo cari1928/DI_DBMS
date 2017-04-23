@@ -3,6 +3,7 @@ package GestionSistema;
 import SED.Gauss;
 import SED.MotorInferencia;
 import SGBD.Columna;
+import SGBD.Errores;
 import SGBD.Registro;
 import SGBD.Tabla;
 import java.io.IOException;
@@ -487,5 +488,40 @@ public class Sistema {
         } else {
             return "#";
         }
+    }
+
+    /**
+     * Usado por chSelect - Automatas
+     * @param sentencias
+     * @param objE
+     * @return 
+     */
+    public boolean obtenerTablas(String[] sentencias, Errores objE) {
+        String parts[];
+
+        for (String tabla : sentencias) {
+            parts = tabla.split(" ");
+
+            if (parts.length == 1) {
+                objE.chTablaExiste("select", tabla);
+                if (objE.getDslerr() != 0) {
+                    return false;
+                }
+            } else {
+                for (String part : parts) {
+                    if (part.contains(".")) {
+                        tabla = part.split("\\.")[0]; //agarra la tabla
+                    } else if (!part.equals("on") && !part.equals("=")) {
+                        tabla = part;
+                    }
+                    objE.chTablaExiste("select", tabla);
+                    if (objE.getDslerr() != 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 }

@@ -786,9 +786,9 @@ public class Automatas {
      */
     private boolean chSelect() {
         String pColumnas[] = null, tablas[] = null, parts[], condiciones[] = null;
-        //Tabla objTresultante;
         List<List<String[]>> Lresultados;
         List<resulWhere> LregW;
+        Sistema objS = new Sistema();
 
         error.chBdActiva("select");
         if (error.getDslerr() != 0) {
@@ -829,11 +829,8 @@ public class Automatas {
             tablas = new String[]{parts[0]};
         }
 
-        for (String tabla : tablas) {
-            error.chTablaExiste("select", tabla);
-            if (error.getDslerr() != 0) {
-                return false;
-            }
+        if (!objS.obtenerTablas(tablas, error)) {
+            return false;
         }
 
         //regresa todos los registros de las tablas fuera del where
@@ -920,9 +917,7 @@ public class Automatas {
     }
 
     private void imprimeResultadoFinal(String[] columnas) {
-        Sistema objS = new Sistema();
-        String resultado = "| ", espacios;
-        String[] parts;
+        String resultado = "| ";
         Registro objR;
         Columna objC;
 
@@ -931,17 +926,20 @@ public class Automatas {
                 objC = LtabResAll.getListRegistro().get(0).getList_columnas().get(i);
 
                 if (objC.getDifusa()) {
+                    //TODO
                     resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + " | ";
                 } else {
                     for (String columna : columnas) {
                         if (columna.equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
-                            resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + " | ";
+                            resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol());
+                            System.out.printf("%-20s | ", resultado.trim());
+                            resultado = "";
                         }
                     }
                 }
             }
-            System.out.println(resultado);
-            resultado = " | ";
+            System.out.println();
+            resultado = "| ";
 
             for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
                 objR = LtabResAll.getListRegistro().get(i);
@@ -949,16 +947,19 @@ public class Automatas {
                 for (int j = 0; j < objR.getList_columnas().size(); j++) {
                     objC = objR.getList_columnas().get(j);
                     if (objC.getDifusa()) {
+                        //TODO
                         resultado += objC.getContenido() + " | ";
                     } else {
                         for (String columna : columnas) {
                             if (columna.equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
-                                resultado += objC.getContenido() + " | ";
+                                resultado += objC.getContenido();
+                                System.out.printf("%-20s | ", resultado.trim());
+                                resultado = "";
                             }
                         }
                     }
                 }
-                System.out.println(resultado);
+                System.out.println();
                 resultado = " | ";
             }
         } else {
@@ -1141,7 +1142,7 @@ public class Automatas {
             Lcondiciones.add(condiciones);
         } else {
             String nueva_condiciones = "";
-            if (and < or && (and != -1)) {
+            if (and < or && (and != -1) || (or == -1 && and > -1)) {
                 for (int j = 0; j < condiciones.length(); j++) {
                     if (j < and) {
                         nueva_condiciones += condiciones.charAt(j);
