@@ -17,6 +17,15 @@ public class Columna {
     private String contenido;
     private String nomtab;
     private boolean difusa = false;
+    private String membresia;
+
+    public String getMembresia() {
+        return membresia;
+    }
+
+    public void setMembresia(String membresia) {
+        this.membresia = membresia;
+    }
 
     public boolean getDifusa() {
         return difusa;

@@ -151,7 +151,7 @@ public class GestionArchivos {
             System.out.println("CARPETA " + ruta + " CREADA CORRECTAMENTE");
         }
 
-        if (ruta.contains(".dbs")) {
+        if (!ruta.contains("SED")) {
             crearArchivo(ruta + "\\tablas");
             crearArchivo(ruta + "\\columnas");
             crearArchivo(ruta + "\\indices");

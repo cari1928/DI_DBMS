@@ -2,12 +2,14 @@ package GestionSistema;
 
 import SED.Gauss;
 import SED.MotorInferencia;
+import SGBD.Automatas;
 import SGBD.Columna;
 import SGBD.Errores;
 import SGBD.Registro;
 import SGBD.Tabla;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -146,46 +148,82 @@ public class Sistema {
     }
 
     //type = $ | #
-    public List<String[]> fuzzyResult(String rutaBase, String[] partsCondition, String whereType) throws IOException {
+    public List<Registro> fuzzyResult(String rutaBase, String[] partsCondition, String whereType) throws IOException {
+        List<Registro> lReg = new ArrayList<>();
+        Registro objR;
+        List<Columna> lCol = new ArrayList<>();
+        Columna objC;
         String[] tableCol = partsCondition[0].split("\\."), parts; //pos 0 = tabla, pos 1 = columna
+        String nomtab = null;
+        Automatas objA = new Automatas();
 
         List<String> lTablas = objG.leer(rutaBase + "tablas");
         List<String> lColumnas = objG.leer(rutaBase + "columnas");
         List<String> lRegistro = objG.leer(rutaBase + tableCol[0] + ".dat");
-        List<String[]> rFinales = new ArrayList<>();
 
-        int tabid = 0, poscol = 0, cont;
+        int tabid = 0, cont;
+        Integer poscol = null;
         String fuzzyRes;
 
         for (String rTabla : lTablas) {
             if (rTabla.contains(tableCol[0])) { //contiene el nombre de la tabla?
-                tabid = Integer.parseInt(rTabla.split(" ")[1]); //obtiene el id de la tabla
+                parts = rTabla.split(" ");
+                tabid = Integer.parseInt(parts[1]); //obtiene el id de la tabla
+                nomtab = parts[0];
                 break;
             }
         }
 
         cont = 0;
         for (String rColumna : lColumnas) {
+            objC = new Columna();
             parts = rColumna.split(" ");
             if (Integer.parseInt(parts[2]) == tabid) { //es la tabla correcta?
-                if (parts[4].equals(tableCol[1])) { //coincide el nombre de la columna?
+                objC.setNomcol(objA.getChars(parts[4], 10));
+                objC.setNomtab(nomtab);
+                lCol.add(objC);
+                if (parts[4].equals(tableCol[1])) {
                     poscol = cont;
-                    break;
                 }
             }
             cont++;
         }
 
-        for (String registro : lRegistro) {
-            parts = registro.split(" ");
+        for (int i = 0; i < lRegistro.size(); i++) {
+            parts = lRegistro.get(i).split(" ");
             fuzzyRes = fuzzyProcess$(parts[poscol], partsCondition, rutaBase + "SED/" + partsCondition[0] + ".tmp");
 
             if (Double.parseDouble(fuzzyRes) != 0) {
-                //TODO, checar esto
-                rFinales.add(new String[]{parts[0], fuzzyRes});
+                for (int j = 0; j < parts.length; j++) {
+                    lCol.get(j).setContenido(parts[j]);
+                    lCol.get(j).setMembresia(fuzzyRes);
+                }
+                //lCol = copiar(lCol, objA);
+                objR = new Registro();
+                objR.setList_columnas(copiar(lCol, objA));
+                lReg.add(objR);
             }
         }
-        return rFinales;
+
+        return lReg;
+    }
+
+    private List<Columna> copiar(List<Columna> lCol, Automatas objA) {
+        List<Columna> tmp = new ArrayList<>();
+        Columna objC;
+        String nomCol, membresia;
+
+        for (Columna c : lCol) {
+            objC = new Columna();
+
+            nomCol = objA.obtenerNombresColumnas(c.getNomcol());
+            objC.setNomcol(objA.getChars(nomCol, 10));
+            objC.setNomtab(c.getNomtab());
+            objC.setContenido(c.getContenido());
+            objC.setMembresia(c.getMembresia());
+            tmp.add(objC);
+        }
+        return tmp;
     }
 
     private String fuzzyProcess$(String valor, String[] partsCondition, String ruta) throws IOException {
@@ -433,28 +471,38 @@ public class Sistema {
         return ecFinal;
     }
 
-    public List<String[]> comparaRegistros(Tabla objTResultante, List<String[]> lResultado) {
-        List<Registro> lRegistro = objTResultante.getListRegistro();
+    public List<String[]> comparaRegistros(Tabla objTResultante, List<Registro> lResultado) {
         List<String[]> lFinal = new ArrayList<>();
-        List<Columna> lColumnas;
-        String[] res;
-        boolean flag, flagK = true;
+        Registro objR;
+        Columna objC, objC2;
+        boolean f1, f2;
+        int contR;
 
-        for (int i = 0; i < lRegistro.size(); i++) {
-            flag = true;
-            flagK = true;
-            lColumnas = lRegistro.get(i).getList_columnas();
+        for (int i = 0; i < lResultado.size(); i++) {
+            contR = 0;
+            f1 = true;
+            objR = lResultado.get(i);
+            for (int j = 0; j < objR.getList_columnas().size() && f1; j++) {
+                f2 = true;
+                objC = objR.getList_columnas().get(j);
 
-            for (int j = 0; j < lColumnas.size() && flag; j++) {
-                for (int k = 0; k < lResultado.size() && (flag || flagK); k++) {
-                    res = lResultado.get(k);
+                for (int k = 0; k < objTResultante.getListRegistro().get(contR).getList_columnas().size() && f2; k++) {
+                    objC2 = objTResultante.getListRegistro().get(contR).getList_columnas().get(k);
 
-                    if (lColumnas.get(j).getContenido().equals(res[0])) {
-                        //guarda la posición y el grado de membresía
-                        lFinal.add(new String[]{i + "", res[1]});
-                        flagK = false;
+                    if (objC.getNomtab().equals(objC2.getNomtab())
+                            && Arrays.toString(objC.getNomcol()).equals(Arrays.toString(objC2.getNomcol()))) {
+
+                        if (objC.getContenido().equals(objC2.getContenido())) {
+                            if (j == objR.getList_columnas().size() - 1) {
+                                lFinal.add(new String[]{contR + "", objC.getMembresia()});
+                                f1 = false;
+                            }
+                            f2 = false;
+                        } else {
+                            ++contR;
+                            k = -1;
+                        }
                     }
-                    flag = false;
                 }
             }
         }
@@ -492,9 +540,10 @@ public class Sistema {
 
     /**
      * Usado por chSelect - Automatas
+     *
      * @param sentencias
      * @param objE
-     * @return 
+     * @return
      */
     public boolean obtenerTablas(String[] sentencias, Errores objE) {
         String parts[];

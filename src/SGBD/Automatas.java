@@ -188,8 +188,9 @@ public class Automatas {
             System.out.println("TABLA " + nombtab + " CREADA CORRECTAMENTE");
             return true;
 
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (Exception ex) {
+            //ex.printStackTrace();
+            System.out.println("ERROR EN LA SINTAXIS");
             return false;
         }
     }
@@ -343,7 +344,7 @@ public class Automatas {
         return type;
     }
 
-    private char[] getChars(String cadena, int tamaño) {
+    public char[] getChars(String cadena, int tamaño) {
         char[] tmp = new char[tamaño];
         for (int i = 0; i < tmp.length; i++) {
             if (i >= cadena.length()) {
@@ -611,7 +612,7 @@ public class Automatas {
         String[][] ordenColumnas;
         String columnasaux, nomtab, aux;
         List<String> tablas;
-        int tabid, nCols = 0;
+        int tabid, nCols = 0, bancol = 0;
         error.chBdActiva("chInsert");
         if (error.getDslerr() != 0) {
             return false;
@@ -660,7 +661,7 @@ public class Automatas {
                 columnas = new String[nCols];
                 List Lcolumnas;
                 int cont = 0;
-                Lcolumnas = objG.leer("columnas");
+                Lcolumnas = objG.leer(RUTA + "columnas");
                 for (int i = 0; i < Lcolumnas.size(); i++) {
                     columnasaux = Lcolumnas.get(i).toString(); //se obtiene una columna de todas las columnas de l BD
                     parts = columnasaux.split(" "); //Se divide por sus campos
@@ -675,6 +676,7 @@ public class Automatas {
                 ex.printStackTrace();
             }
         } else {
+            bancol = 1;
             for (String columna : columnas) {
                 error.chColumnasExisten("chInsert", columna, tabid);
                 if (error.getDslerr() != 0) {
@@ -709,7 +711,7 @@ public class Automatas {
 
         for (int i = 0; i < columnas.length; i++) {
             for (String[] ordenColumna : ordenColumnas) {
-                if (columnas[i].equals(ordenColumna[1])) {
+                if (columnas[i].equals(ordenColumna[bancol])) {
                     ordenColumna[2] = valores[i];
                 }
             }
@@ -728,7 +730,7 @@ public class Automatas {
                             //No se ha verificado que la tabla sea difusa
                             if (FFT = error.chTablaDifusa((tabid - 501))) {
                                 //Se checa que la tabla sea difusa
-                                if (error.chColumnaDifusa(Integer.parseInt(ordenColumna[0]) - 1)) {
+                                if (error.chColumnaDifusa(Integer.parseInt(ordenColumna[0]))) {
                                     //Verifica que la columna sea difusa...
                                     if (!error.chVariableLinguistica(nomtab + "." + ordenColumna[1], ordenColumna[2].split("<")[1].split(">")[0])) {
                                         //Verifica que la variable linguistica exista
@@ -773,8 +775,9 @@ public class Automatas {
         }
         try {
             objG.escribir(RUTA + nomtab + ".dat", objG.contarRengs(RUTA + nomtab + ".dat"), registro, "final");
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (Exception ex) {
+            //ex.printStackTrace();
+            System.out.println("ERROR EN LA SINTAXIS");
         }
         System.out.println("REGISTRO INSERTADO");
         return true;
@@ -1065,7 +1068,7 @@ public class Automatas {
         return objTresultante;
     }
 
-    private String obtenerNombresColumnas(char NomCol[]) {
+    public String obtenerNombresColumnas(char NomCol[]) {
         String nombre = "";
 
         for (int i = 0; i < NomCol.length; i++) {
@@ -1484,7 +1487,8 @@ public class Automatas {
      */
     private List<String[]> chCondicionDifusa(String condicion, Tabla objTResultante) throws IOException {
         Sistema objS = new Sistema();
-        List<String[]> lResultado;
+        List<Registro> lResultado;
+        List<String[]> lResFinal;
         VariableEntrada objV = new VariableEntrada("", this);
         String[] partsCondition = condicion.split(" ");
         String registro, type = "#";
@@ -1508,11 +1512,11 @@ public class Automatas {
         lResultado = objS.fuzzyResult(RUTA, partsCondition, type);
 
         //Obtiene estructura final
-        lResultado = objS.comparaRegistros(objTResultante, lResultado);
+        lResFinal = objS.comparaRegistros(objTResultante, lResultado);
 
         objG.deleteFile(RUTA + "SED/" + partsCondition[0] + ".tmp"); //ya no se necesita el archivo tmp
 
-        return lResultado;
+        return lResFinal;
     }
 
 //        posibles casos

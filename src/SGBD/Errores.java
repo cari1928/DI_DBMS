@@ -258,7 +258,7 @@ public class Errores {
 
                         } else if (parts[0].equals("double")) {
                             try {
-                                Double.parseDouble(parts[0]); //comprueba que sea double
+                                Double.parseDouble(colvalue); //comprueba que sea double
                             } catch (Exception e) {
                                 asignarCodigo(accion, "chComparaTipoColumnas");
                                 return false;
