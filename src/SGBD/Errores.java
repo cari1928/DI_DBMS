@@ -396,7 +396,10 @@ public class Errores {
             case "delete":
                 switch (metodo) {
                     case "chBdActiva":
-                        dslerr = 288;//numero inventado
+                        dslerr = 800;
+                        break;
+                    case "chTablaExiste":
+                        dslerr = 801;
                         break;
                 }
                 break;

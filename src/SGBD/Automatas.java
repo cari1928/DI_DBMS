@@ -74,6 +74,8 @@ public class Automatas {
             return true;
         } else if (chUpdate()) {
             return true;
+        } else if (chDelete()) {
+            return true;
         } else if (chShowDBFiles()) {
             return true;
         } else if (chShowSEDFiles()) {
@@ -841,7 +843,6 @@ public class Automatas {
         LtabResAll = obtener_tabla_resultante(tablas, 0, new Tabla());
 
         if (query.contains(" where ")) { // Si hay condiciones...
-//            LselecCond = new ArrayList<>(); //guarda las condiciones a mostrar al usuario
             tratado_condiciones(query.split(" where ")[1]); //Gurda todas las condiciones que tiene en una lista de String la forma en como guarda es condicion y operafor logico la siguiente condicion asi sucesivamente
 
             Lresultados = verificarCondiciones();
@@ -924,38 +925,18 @@ public class Automatas {
         Registro objR;
         Columna objC;
 
-        if (columnas != null) {
-            for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
-                objC = LtabResAll.getListRegistro().get(0).getList_columnas().get(i);
+        try {
+            if (columnas != null) {
+                for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
+                    objC = LtabResAll.getListRegistro().get(0).getList_columnas().get(i);
 
-                if (objC.getDifusa()) {
-                    //TODO
-                    resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + " | ";
-                } else {
-                    for (String columna : columnas) {
-                        if (columna.equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
-                            resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol());
-                            System.out.printf("%-20s | ", resultado.trim());
-                            resultado = "";
-                        }
-                    }
-                }
-            }
-            System.out.println();
-            resultado = "| ";
-
-            for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
-                objR = LtabResAll.getListRegistro().get(i);
-
-                for (int j = 0; j < objR.getList_columnas().size(); j++) {
-                    objC = objR.getList_columnas().get(j);
                     if (objC.getDifusa()) {
                         //TODO
-                        resultado += objC.getContenido() + " | ";
+                        resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()) + " | ";
                     } else {
                         for (String columna : columnas) {
                             if (columna.equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
-                                resultado += objC.getContenido();
+                                resultado += objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol());
                                 System.out.printf("%-20s | ", resultado.trim());
                                 resultado = "";
                             }
@@ -963,29 +944,53 @@ public class Automatas {
                     }
                 }
                 System.out.println();
-                resultado = " | ";
-            }
-        } else {
-            for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
-                resultado += LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomtab()
-                        + "."
-                        + obtenerNombresColumnas(LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomcol());
-                System.out.printf("%-20s | ", resultado);
-                resultado = "";
-            }
-            System.out.println();
-
-            for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
                 resultado = "| ";
-                objR = LtabResAll.getListRegistro().get(i);
-                for (int j = 0; j < objR.getList_columnas().size(); j++) {
-                    objC = objR.getList_columnas().get(j);
-                    resultado += objC.getContenido();
-                    System.out.printf("%-20s | ", resultado.trim()); //no sé porque, pero necesita el .trim 
+
+                for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
+                    objR = LtabResAll.getListRegistro().get(i);
+
+                    for (int j = 0; j < objR.getList_columnas().size(); j++) {
+                        objC = objR.getList_columnas().get(j);
+                        if (objC.getDifusa()) {
+                            //TODO
+                            resultado += objC.getContenido() + " | ";
+                        } else {
+                            for (String columna : columnas) {
+                                if (columna.equals(objC.getNomtab() + "." + obtenerNombresColumnas(objC.getNomcol()))) {
+                                    resultado += objC.getContenido();
+                                    System.out.printf("%-20s | ", resultado.trim());
+                                    resultado = "";
+                                }
+                            }
+                        }
+                    }
+                    System.out.println();
+                    resultado = " | ";
+                }
+            } else {
+                for (int i = 0; i < LtabResAll.getListRegistro().get(0).getList_columnas().size(); i++) {
+                    resultado += LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomtab()
+                            + "."
+                            + obtenerNombresColumnas(LtabResAll.getListRegistro().get(0).getList_columnas().get(i).getNomcol());
+                    System.out.printf("%-20s | ", resultado);
                     resultado = "";
                 }
                 System.out.println();
+
+                for (int i = 0; i < LtabResAll.getListRegistro().size(); i++) {
+                    resultado = "| ";
+                    objR = LtabResAll.getListRegistro().get(i);
+                    for (int j = 0; j < objR.getList_columnas().size(); j++) {
+                        objC = objR.getList_columnas().get(j);
+                        resultado += objC.getContenido();
+                        System.out.printf("%-20s | ", resultado.trim()); //no sé porque, pero necesita el .trim 
+                        resultado = "";
+                    }
+                    System.out.println();
+                }
             }
+        } catch (Exception e) {
+            System.out.println("NO HAY ELEMENTOS");
         }
     }
 
@@ -1717,6 +1722,59 @@ public class Automatas {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean chDelete() {
+        String[] partsCondition;
+        String tmp, tmpQuery;
+        List<Registro> resQuery;
+        List<String> lRegFile;
+        Sistema objS;
+
+        error.chBdActiva("delete");
+        if (error.getDslerr() != 0) {
+            return false;
+        }
+
+        query = query.toLowerCase();
+        if (!query.contains("delete from")) {
+            return false;
+        }
+        partsCondition = query.split("delete from ")[1].split(" ");
+
+        //nombre de la tabla siempre está en la posición 1
+        error.chTablaExiste("delete", partsCondition[0]);
+        if (error.getDslerr() != 0) {
+            return false;
+        }
+
+        //TODO, falta checar que no se esté dañando alguna referencia
+        tmpQuery = query; //respaldo del query original
+        query = "select * from " + partsCondition[0];
+
+        if (partsCondition.length > 3) {
+            //contiene un where
+            tmp = tmpQuery.split(" where ")[1];
+            query += " where " + tmp; //creación el select
+        }
+
+        if (!chSelect()) {
+            return false;
+        }
+
+        try {
+            resQuery = LtabResAll.getListRegistro();
+            lRegFile = objG.leer(RUTA + partsCondition[0] + ".dat");
+            objS = new Sistema();
+            lRegFile = objS.comparaRegistros(resQuery, lRegFile);
+            objS.escribeRegistros(lRegFile, partsCondition[0], RUTA);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+        System.out.println("ELIMINADO CON ÉXITO");
+        return true;
     }
 
 }
