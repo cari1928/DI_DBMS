@@ -1530,10 +1530,9 @@ public class Automatas {
 //        query = "UPDATE prueba SET col1=val1";
     public boolean chUpdate() {
         int res;
-        Tabla objT = new Tabla();
-        String[] columnas, parts;
+        String[] cols, parts;
+        String tmpQuery, nomtab;
 
-        //checa si la base de datos está activa
         error.chBdActiva("update");
         if (error.getDslerr() != 0) {
             return false;
@@ -1545,102 +1544,32 @@ public class Automatas {
             return false;
         }
         parts = parts[1].split(" set ");
-        objT.setNombtab(parts[0]); //Nombre de la tabla
-        res = error.chTablaExiste("update", objT.getNombtab());
+        nomtab = parts[0]; //nombre de la tabla
+        res = error.chTablaExiste("update", nomtab);
         if (error.getDslerr() != 0) {
             return false;
         }
-        objT.setTabid(res); //id de la tabla
+
+        tmpQuery = query;
+        query = "select * from " + nomtab; //va preparando el select
+        parts[0] = parts[1]; //parts en la posición 0 debe contener las columnas del update
 
         if (parts[1].contains("where")) {
             parts = parts[1].split(" where "); //obtiene columnas del where
-
-            //comenzar a recorrer buscando las condiciones
-            //teniendo en cuenta los AND y OR
-            whereConditions(parts, objT);
-
-            columnas = parts[0].split(",");
-            for (String columna : columnas) {
-                parts = columna.split("=");
-                res = error.chColumnasExisten("update", parts[0], objT.getTabid()); //obtiene el id de la columna
-                if (error.getDslerr() != 0) {
-                    return false;
-                }
-                objT.getColumnas().add(res + "");
-
-                //verifica que cada valor corresponda al tipo de dato de cada columna
-                error.chComparaTipoColumnas("update", objT.getTabid(), res, parts[1]);
-                if (error.getDslerr() != 0) {
-                    return false;
-                }
-
-                if (!whereConditions(parts, objT)) {
-                    return false;
-                }
-            }
+            query += " where " + parts[1]; //coloca las condiciones del where
         }
 
-        //TODO
-        //checar tipo de dato de cada columna de update, no de where
-        //checar integridad
-        //checar valores de indices
-        //actualizar archivo tablas
-        //actualizar archivo indices
+        parts = parts[0].split(", ");
+        if (!chSelect()) {
+            System.out.println("HUBO UN ERROR AL INTENTAR ");
+            return false;
+        }
+
+        if (!metodo(LtabResAll.getListRegistro(), parts, nomtab)) {
+            return false;
+        }
+        System.out.println("REGISTROS ACTUALIZADOS");
         return true;
-    }
-
-    //se encarga de procesar un estatuto where para obtener los operadores lógicos booleanos y las condiciones
-    private boolean whereConditions(String[] where, Tabla objT) {
-        List<String> logic = new ArrayList<>();
-        List<Boolean> results = new ArrayList<>();
-        String[] whereElements, parts;
-        whereElements = where[1].split(" ");
-
-        for (String whereE : whereElements) { //recorre cada elemento del estatuto where
-
-            if (whereE.equals("and") || whereE.equals("or")) {
-                logic.add(whereE); //guarda los operadores
-            } else {
-                //guarda el resultado booleano de cada condición
-                if (whereE.contains("=")) {
-                    //condición determinista
-                    parts = whereE.split("=");
-                    //valida si la columna existe en la tabla
-                    error.chColumnasExisten("update", parts[0], objT.getTabid());
-                    if (error.getDslerr() != 0) {
-                        return false;
-                    }
-                    //TODO, modificar
-                    //results.add(chCrispCondition(whereE));
-                } else {
-                    //condición difusa
-                    //TODO, modificar
-                    //results.add(chFuzzyCondition(whereE));
-                }
-            }
-        }
-
-        return chConditions(logic, results);
-
-    }
-
-    //procesa las condiciones concatenando los resultados booleanos
-    private boolean chConditions(List<String> logic, List<Boolean> results) {
-        boolean r = results.get(0); //obtiene el resultado de la primera condición
-        for (int i = 1; i < results.size(); i++) { //recorre los resultados de las condiciones
-
-            for (String log : logic) { //recorre los operadores lógicos guardados
-
-                if (log.equals("and")) {
-                    r &= results.get(i);
-                } else {
-                    r |= results.get(i);
-                }
-
-            }
-        }
-
-        return r;
     }
 
     private boolean chShowDBFiles() {

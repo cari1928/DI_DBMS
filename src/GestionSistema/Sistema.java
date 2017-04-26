@@ -614,4 +614,9 @@ public class Sistema {
         }
     }
     
+    public void obtieneColumnas(String[] condiciones) {
+        List<String> lCols = new ArrayList<>();
+        
+    }
+    
 }
