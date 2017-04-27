@@ -551,11 +551,12 @@ public class Automatas {
      */
     public boolean chCrearReferencia() {
         Columna objC;
+        String registroCol;
         Tabla objT;
         String[] parts, parts2;
         int idtab[] = new int[2];
         int idcolumn[] = new int[2];
-        String columns[] = new String[2];
+        //String columns[] = new String[2];
 
         error.chBdActiva("chCrearReferencia");
         if (error.getDslerr() != 0) {
@@ -570,40 +571,45 @@ public class Automatas {
         }
 
         //separar las tablas de las columnas
-        parts = query.split("create reference");
-        parts = parts[0].split(" ");
+        parts = query.split("create reference ")[1].split(" ");
         //valida existencia de tablas y columnas
         for (int i = 0; i < 2; i++) {
-            parts2 = parts[i].split(".");
+            parts2 = parts[i].split("\\.");
             if (parts2.length != 2) {
                 return false;
             }
             idtab[i] = error.chTablaExiste("chCrearReferencia", parts2[0]);
-            if (idtab[i] != 0) {
+            if (error.getDslerr() != 0) {
                 return false;
             }
-            columns[i] = parts2[1];
-            if (idcolumn[i] != 0) {
+
+            idcolumn[i] = error.chColumnasExisten("chCrearReferencia", parts2[1], idtab[i]);
+            if (error.getDslerr() != 0) {
                 return false;
             }
         }
-        if (!error.chComparaTipoColumnas("chCrearReferencia", idtab, idcolumn)) {
+        registroCol = error.chComparaTipoColumnas("chCrearReferencia", idcolumn);
+        if (error.getDslerr() != 0) {
             return false;
         }
 
-        for (int j = 0; j < objBD.getListTablas().size(); j++) {
-            objT = objBD.getListTablas().get(j); //para simplificar el código siguiente
-
-            if (objT.getTabid() == idtab[0]) { //Compara id para encontrar la tabla indicada
-                for (int k = 0; k < objT.getListColumnas().size(); k++) {
-                    objC = objT.getListColumnas().get(k); //para simplificar el código siguiente
-
-                    if (objC.getColid() == idcolumn[0]) {//Compara id para encontrar la columna indicada
-                        objC.setTabref(idtab[1]);
-                        objC.setColref(idcolumn[1]);
-                    }
-                }
+        parts = registroCol.split(" ");
+        registroCol = "";
+        for (int i = 0; i < parts.length; i++) {
+            if (i == 5) {
+                registroCol += idtab[1] + " ";
+            } else if (i == 6) {
+                registroCol += idcolumn[1] + " ";
+            } else if (i == parts.length - 1) {
+                registroCol += parts[i];
+            } else {
+                registroCol += parts[i] + " ";
             }
+        }
+        try {
+            objG.actualizar(RUTA + "columnas", idcolumn[0] -1, registroCol);
+        } catch (Exception e) {
+            System.out.println("Error al modificar la columna");
         }
         return true;
     }
@@ -1525,13 +1531,14 @@ public class Automatas {
     }
 
 //        posibles casos
-//        query = "UPDATE prueba SET col1=val1, col2=val2 WHERE col1=D AND col2=F";
-//        query = "UPDATE prueba SET col1=val1 WHERE condicion col1=D OR col=D";
+//        query = "UPDATE prueba SET col1=val1, col2=val2 WHERE col1 = D AND col2 = F";
+//        query = "UPDATE prueba SET col1=val1 WHERE condicion col1 = D OR col = D";
 //        query = "UPDATE prueba SET col1=val1";
     public boolean chUpdate() {
         int res;
         String[] cols, parts;
         String tmpQuery, nomtab;
+        Sistema objS = new Sistema();
 
         error.chBdActiva("update");
         if (error.getDslerr() != 0) {
@@ -1565,10 +1572,10 @@ public class Automatas {
             return false;
         }
 
-        if (!metodo(LtabResAll.getListRegistro(), parts, nomtab)) {
+        if (!objS.actualiza(LtabResAll.getListRegistro(), parts, RUTA + nomtab+".dat")) {
             return false;
         }
-        System.out.println("REGISTROS ACTUALIZADOS");
+        System.out.println("SE HAN ACTULIZADO " + LtabResAll.getListRegistro().size() + " REGISTROS");
         return true;
     }
 

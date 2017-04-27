@@ -17,9 +17,9 @@ import java.util.List;
  * @author Tenistas
  */
 public class Sistema {
-    
+
     private final GestionArchivos objG;
-    
+
     public Sistema() {
         objG = new GestionArchivos();
     }
@@ -36,12 +36,12 @@ public class Sistema {
     public String getUniverse(String ruta, String etiqueta) throws IOException {
         List<String> registros = objG.leer(ruta);
         String[] parts;
-        
+
         for (String r : registros) {
             parts = r.split(" ");
             return parts[0] + " " + parts[1] + " " + parts[2] + " tmp";
         }
-        
+
         return null;
     }
 
@@ -59,7 +59,7 @@ public class Sistema {
         double tmpDistance, fin = 0, origen;
         Double[] criticPoints = new Double[2]; //prepara el contenedor de los puntos críticos
         List<String> listR;
-        
+
         if (partsCondition[2].contains("$")) {
             //se hará el proceso en base a una etiqueta linguística
             //obtiene la información de la variable linguística
@@ -71,7 +71,7 @@ public class Sistema {
 
                     //obtiene la distancia entre el punto inferior izquierdo y el punto crítico 1
                     tmpDistance = Math.abs(Double.parseDouble(parts2[1]) - Double.parseDouble(parts2[4]));
-                    
+
                     if (partsCondition[1].equals("fleq")) {
                         if (parts2[0].equals("Trapezoide")) {
                             criticPoints[0] = Double.parseDouble(parts2[2]); //obtiene el punto crítico más a la derecha
@@ -126,10 +126,10 @@ public class Sistema {
                 tmpDistance = fin - criticPoints[0];
                 criticPoints[1] = criticPoints[0] - tmpDistance;
             }
-            
+
             return criticPoints;
         }
-        
+
         return null; //no encontró la etiqueta linguistica
     }
 
@@ -156,15 +156,15 @@ public class Sistema {
         String[] tableCol = partsCondition[0].split("\\."), parts; //pos 0 = tabla, pos 1 = columna
         String nomtab = null;
         Automatas objA = new Automatas();
-        
+
         List<String> lTablas = objG.leer(rutaBase + "tablas");
         List<String> lColumnas = objG.leer(rutaBase + "columnas");
         List<String> lRegistro = objG.leer(rutaBase + tableCol[0] + ".dat");
-        
+
         int tabid = 0, cont;
         Integer poscol = null;
         String fuzzyRes;
-        
+
         for (String rTabla : lTablas) {
             if (rTabla.contains(tableCol[0])) { //contiene el nombre de la tabla?
                 parts = rTabla.split(" ");
@@ -173,7 +173,7 @@ public class Sistema {
                 break;
             }
         }
-        
+
         cont = 0;
         for (String rColumna : lColumnas) {
             objC = new Columna();
@@ -188,11 +188,11 @@ public class Sistema {
             }
             cont++;
         }
-        
+
         for (int i = 0; i < lRegistro.size(); i++) {
             parts = lRegistro.get(i).split(" ");
             fuzzyRes = fuzzyProcess$(parts[poscol], partsCondition, rutaBase + "SED/" + partsCondition[0] + ".tmp");
-            
+
             if (Double.parseDouble(fuzzyRes) != 0) {
                 for (int j = 0; j < parts.length; j++) {
                     lCol.get(j).setContenido(parts[j]);
@@ -204,18 +204,18 @@ public class Sistema {
                 lReg.add(objR);
             }
         }
-        
+
         return lReg;
     }
-    
+
     private List<Columna> copiaEstructura(List<Columna> lCol, Automatas objA) {
         List<Columna> tmp = new ArrayList<>();
         Columna objC;
         String nomCol, membresia;
-        
+
         for (Columna c : lCol) {
             objC = new Columna();
-            
+
             nomCol = objA.obtenerNombresColumnas(c.getNomcol());
             objC.setNomcol(objA.getChars(nomCol, 10));
             objC.setNomtab(c.getNomtab());
@@ -225,14 +225,14 @@ public class Sistema {
         }
         return tmp;
     }
-    
+
     private String fuzzyProcess$(String valor, String[] partsCondition, String ruta) throws IOException {
         MotorInferencia objMI = new MotorInferencia();
         Double tmp, tmp2;
         double value;
         String etiqueta, simbolo = obtenerSimbolo(partsCondition[2]), whLabel = quitaSimbolo(partsCondition[2]);
         String[] shape;
-        
+
         if (!valor.contains("<")) {
             //valor numérico
             try {
@@ -298,7 +298,7 @@ public class Sistema {
     private String fuzzyProcessHash() {
         return null;
     }
-    
+
     private Double intPoint(String[] partsCondition, String simpleValue, String rutaBase, String ind) throws IOException {
         Gauss objGauss;
         //obtengo registros del archivo temporal
@@ -343,7 +343,7 @@ public class Sistema {
                 points[1] = Double.parseDouble(parts[4]); //punto inferior
             }
         }
-        
+
         return points;
     }
 
@@ -359,13 +359,13 @@ public class Sistema {
         double[] points = null;
         String[] parts;
         double dist, origen = 0, fin = 0;
-        
+
         for (String r : lTrap) {
             if (r.contains(rEtiqueta)) {
                 points = new double[2];
                 parts = r.split(" ");
                 if (partsCondition[1].equals("fleq")) {
-                    
+
                     if (parts[0].equals("Trapezoide")) {
                         //toma los puntos más a la izquierda del trapezoide o semitrap
                         if (ind == null) {
@@ -450,34 +450,34 @@ public class Sistema {
 
         double partX, partY;
         double[] ecX = new double[2], ecY = new double[2], ecFinal = new double[3];
-        
+
         partX = puntos[1] - puntos[0];
         partY = -1; //porque se hace siempre la operación 0 - 1
 
         ecX[0] = partY;
         ecX[1] = -(partY * puntos[0]);
-        
+
         ecY[0] = partX;
         ecY[1] = -(partX * 1);
 
         //pasamos ecY al otro lado del igual
         ecY[0] *= -1;
         ecY[1] *= -1;
-        
+
         ecFinal[0] = ecX[0];
         ecFinal[1] = ecY[0];
         //sumamos las constantes y las pasamos al otro lado del igual
         ecFinal[2] = (ecX[1] + ecY[1]) * -1;
         return ecFinal;
     }
-    
+
     public List<String[]> comparaRegistros(Tabla objTResultante, List<Registro> lResultado) {
         List<String[]> lFinal = new ArrayList<>();
         Registro objR;
         Columna objC, objC2;
         boolean f1, f2;
         int contR;
-        
+
         for (int i = 0; i < lResultado.size(); i++) {
             contR = 0;
             f1 = true;
@@ -485,13 +485,13 @@ public class Sistema {
             for (int j = 0; j < objR.getList_columnas().size() && f1; j++) {
                 f2 = true;
                 objC = objR.getList_columnas().get(j);
-                
+
                 for (int k = 0; k < objTResultante.getListRegistro().get(contR).getList_columnas().size() && f2; k++) {
                     objC2 = objTResultante.getListRegistro().get(contR).getList_columnas().get(k);
-                    
+
                     if (objC.getNomtab().equals(objC2.getNomtab())
                             && Arrays.toString(objC.getNomcol()).equals(Arrays.toString(objC2.getNomcol()))) {
-                        
+
                         if (objC.getContenido().equals(objC2.getContenido())) {
                             if (j == objR.getList_columnas().size() - 1) {
                                 lFinal.add(new String[]{contR + "", objC.getMembresia()});
@@ -513,11 +513,11 @@ public class Sistema {
     private String[] tipoFigura(String etiqueta, String ruta) throws IOException {
         List<String> lRegistros = objG.leer(ruta);
         String[] parts;
-        
+
         for (String r : lRegistros) {
             if (r.contains(etiqueta)) {
                 parts = r.split(" ");
-                
+
                 if (parts[0].equals("Trapezoide")) {
                     return new String[]{parts[0]}; //solo manda el tipo
                 } else {
@@ -526,10 +526,10 @@ public class Sistema {
                 }
             }
         }
-        
+
         return null; //no encontró la etiqueta
     }
-    
+
     private String obtenerSimbolo(String valor) {
         if (valor.contains("$")) {
             return "$";
@@ -547,10 +547,10 @@ public class Sistema {
      */
     public boolean obtenerTablas(String[] sentencias, Errores objE) {
         String parts[];
-        
+
         for (String tabla : sentencias) {
             parts = tabla.split(" ");
-            
+
             if (parts.length == 1) {
                 objE.chTablaExiste("select", tabla);
                 if (objE.getDslerr() != 0) {
@@ -572,31 +572,31 @@ public class Sistema {
         }
         return true;
     }
-    
+
     public List<String> comparaRegistros(List<Registro> lResultado, List<String> lRegFiles) {
         List<Registro> lFinal = new ArrayList<>();
         List<Columna> lCols;
         String[] parts;
         boolean add;
-        
+
         if (lResultado.size() == lRegFiles.size()) {
             return new ArrayList<>(); // lo envía vacío
         }
-        
+
         for (int i = 0; i < lResultado.size(); i++) {
             lCols = lResultado.get(i).getList_columnas();
-            
+
             for (int k = 0; k < lRegFiles.size(); k++) {
                 add = true;
                 parts = lRegFiles.get(k).split(" ");
-                
+
                 for (int j = 0; j < parts.length && add; j++) {
                     //parts.lenght y lCols.size debería tener el mismo tamaño
                     if (!lCols.get(j).getContenido().equals(parts[j])) {
                         add = false;
                     }
                 }
-                
+
                 if (add) {
                     lRegFiles.remove(k);
                     break;
@@ -605,7 +605,7 @@ public class Sistema {
         }
         return lRegFiles;
     }
-    
+
     public void escribeRegistros(List<String> lString, String nomtab, String rutaBase) throws IOException {
         objG.deleteFile(rutaBase + nomtab + ".dat");
         objG.crearArchivo(rutaBase + nomtab + ".dat");
@@ -613,10 +613,72 @@ public class Sistema {
             objG.escribir(rutaBase + "/" + nomtab + ".dat", i, lString.get(i), "final");
         }
     }
-    
+
     public void obtieneColumnas(String[] condiciones) {
         List<String> lCols = new ArrayList<>();
-        
+
     }
-    
+
+    public boolean actualiza(List<Registro> reg, String[] columnas, String archivo) {
+        List<String> registros;
+        String[] parts;
+        String regActualizado = "";
+        Registro objR;
+        Automatas objA = new Automatas();
+        int totA; //Total actual
+        boolean bandera = true;
+        try {
+            registros = objG.leer(archivo);
+            
+            for (int i = 0; i < reg.size(); i++) {
+                objR = reg.get(i);
+
+                for (int j = 0; j < registros.size(); j++) {
+                    parts = registros.get(j).split(" ");
+
+                    for (int k = 0; k < parts.length; k++) {
+                        if (!parts[k].trim().equals(objR.getList_columnas().get(k).getContenido().trim())) {
+                            bandera = false;
+                            break;
+                        }
+                    }
+                    if (bandera) {
+
+                        regActualizado = "";
+                        for (int k = 0; k < objR.getList_columnas().size(); k++) {
+                            totA = regActualizado.length();
+
+                            for (int l = 0; l < columnas.length; l++) {
+                                if (columnas[l].split("=")[0].equals(objA.obtenerNombresColumnas(objR.getList_columnas().get(k).getNomcol()))) {
+
+                                    if (k == objR.getList_columnas().size() - 1) {
+                                        regActualizado += columnas[l].split("=")[1];
+                                    } else {
+                                        regActualizado += columnas[l].split("=")[1] + " ";
+                                    }
+                                }
+                            }
+                            
+                            if (totA == regActualizado.length()) {
+                                if (k == objR.getList_columnas().size() - 1) {
+                                    regActualizado += objR.getList_columnas().get(k).getContenido();
+                                } else {
+                                    regActualizado += objR.getList_columnas().get(k).getContenido() + " ";
+                                }
+                            }
+                        }
+                        
+                        objG.actualizar(archivo, j, regActualizado);
+                        bandera = true;
+                        break;
+                    } else {
+                        bandera = true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+        }
+        return true;
+    }
+
 }

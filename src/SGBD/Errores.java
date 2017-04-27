@@ -181,33 +181,22 @@ public class Errores {
         return true;
     }
 
-    public boolean chComparaTipoColumnas(String accion, int idtab[], int idcolumn[]) {
-        boolean flag = true;
-        char tipo[] = new char[2];
-        Tabla objT;
-        Columna objC;
-
-        for (int k = 0; k < 2; k++) {
-
-            for (int i = 0; i < objBD.getListTablas().size(); i++) {
-                objT = objBD.getListTablas().get(i); //para simplificar el código siguiente
-                if (objT.getTabid() == idtab[k]) { //Compara id para encontrar la tabla indicada
-
-                    for (int j = 0; j < objT.getListColumnas().size(); j++) {
-                        objC = objT.getListColumnas().get(j);
-
-                        if (objC.getColid() == idcolumn[k]) { //Compara id para encontrar la columna indicada
-                            tipo[k] = objC.getColtipo();
-                        }
-                    }
-                }
-            }
+    public String chComparaTipoColumnas(String accion, int idcolumn[]) {
+        
+        String columna1 = "", columna2 = "";
+        try {
+            columna1 = objG.obtenerRegistroByID(RUTABD + "columnas", (idcolumn[0] -1));
+            columna2 = objG.obtenerRegistroByID(RUTABD + "columnas", (idcolumn[1] -1));
+        } catch (Exception e) {
+            System.out.println("Error en los tipos de columnas");
         }
-        if (tipo[0] != tipo[1]) {
-            flag = false;
+        
+        if(!columna1.split(" ")[0].trim().equals(columna2.split(" ")[0].trim())){
+            asignarCodigo(accion, "chComparaTipoColumnas");
+            return "";
         }
-        asignarCodigo(accion, "chComparaTipoColumnas");
-        return flag;
+        
+        return columna1;
     }
 
     public boolean chComparaTipoColumnas(String accion, int tabid, int colid, String colvalue) {
